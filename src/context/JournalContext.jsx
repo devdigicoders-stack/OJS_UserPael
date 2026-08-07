@@ -63,7 +63,7 @@ export const JournalProvider = ({ children }) => {
       const token = localStorage.getItem('userToken');
       if (!token) return;
       
-      const res = await fetch('http://localhost:5000/api/journals/my-stats', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/journals/my-stats`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -80,7 +80,7 @@ export const JournalProvider = ({ children }) => {
       const token = localStorage.getItem('userToken');
       if (!token) return;
       
-      const res = await fetch('http://localhost:5000/api/auth/user/profile', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/user/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -103,7 +103,7 @@ export const JournalProvider = ({ children }) => {
       const token = localStorage.getItem('userToken');
       if (!token) return;
 
-      const res = await fetch('http://localhost:5000/api/journals/my-submissions', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/journals/my-submissions`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -166,7 +166,7 @@ export const JournalProvider = ({ children }) => {
         formData.append('mainFile', mainFile);
       }
 
-      const res = await fetch('http://localhost:5000/api/journals/upload', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/journals/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

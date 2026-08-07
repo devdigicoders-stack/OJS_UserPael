@@ -66,7 +66,7 @@ const JournalFiles = () => {
       uploadedBy: authorName,
       iconColor: ext === 'PDF' ? '#FEE2E2' : '#DBEAFE',
       textColor: ext === 'PDF' ? '#DC2626' : '#2563EB',
-      fileUrl: `http://localhost:5000/${currentJournal.mainFilePath.replace(/\\/g, '/')}`
+      fileUrl: `${import.meta.env.VITE_API_URL.replace('/api', '')}/${currentJournal.mainFilePath.replace(/\\/g, '/')}`
     });
   }
 

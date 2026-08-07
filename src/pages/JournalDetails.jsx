@@ -51,7 +51,7 @@ const JournalDetails = () => {
   const handleDownload = (type) => {
     if (type === 'pdf') {
       if (currentJournal.mainFilePath) {
-        const fileUrl = `http://localhost:5000/${currentJournal.mainFilePath.replace(/\\/g, '/')}`;
+        const fileUrl = `${import.meta.env.VITE_API_URL.replace('/api', '')}/${currentJournal.mainFilePath.replace(/\\/g, '/')}`;
         const fileName = currentJournal.mainFilePath.split('/').pop().split('\\').pop() || 'Article_Manuscript.pdf';
         forceDownload(fileUrl, fileName);
       } else {
@@ -81,7 +81,7 @@ const JournalDetails = () => {
 
   const handlePrintArticle = () => {
     if (currentJournal.mainFilePath) {
-      const fileUrl = `http://localhost:5000/${currentJournal.mainFilePath.replace(/\\/g, '/')}`;
+      const fileUrl = `${import.meta.env.VITE_API_URL.replace('/api', '')}/${currentJournal.mainFilePath.replace(/\\/g, '/')}`;
       window.open(fileUrl, '_blank');
       return;
     } else {
@@ -569,7 +569,7 @@ const JournalDetails = () => {
               </button>
               <button onClick={() => {
                 if (currentJournal.mainFilePath) {
-                  window.open(`http://localhost:5000/${currentJournal.mainFilePath.replace(/\\/g, '/')}`, '_blank');
+                  window.open(`${import.meta.env.VITE_API_URL.replace('/api', '')}/${currentJournal.mainFilePath.replace(/\\/g, '/')}`, '_blank');
                 } else {
                   toast.error('Article file not found');
                 }
@@ -1821,7 +1821,7 @@ const JournalDetails = () => {
             <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '32px' }}>
               <button onClick={() => {
                 if (currentJournal.mainFilePath) {
-                  window.open(`http://localhost:5000/${currentJournal.mainFilePath.replace(/\\/g, '/')}`, '_blank');
+                  window.open(`${import.meta.env.VITE_API_URL.replace('/api', '')}/${currentJournal.mainFilePath.replace(/\\/g, '/')}`, '_blank');
                 } else {
                   toast.error('File not found');
                 }

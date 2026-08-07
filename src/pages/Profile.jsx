@@ -38,7 +38,7 @@ const Profile = () => {
       const token = localStorage.getItem('userToken');
       if (!token) return;
 
-      const response = await fetch('http://localhost:5000/api/auth/user/profile', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/user/profile`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -98,7 +98,7 @@ const Profile = () => {
       const token = localStorage.getItem('userToken');
       if (!token) return;
 
-      const response = await fetch('http://localhost:5000/api/auth/user/avatar', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/user/avatar`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -135,7 +135,7 @@ const Profile = () => {
       const token = localStorage.getItem('userToken');
       if (!token) return;
 
-      const response = await fetch('http://localhost:5000/api/auth/user/profile', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/user/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -247,7 +247,7 @@ const Profile = () => {
                 overflow: 'hidden'
               }}>
                 {formData.profilePic ? (
-                  <img src={`http://localhost:5000${formData.profilePic}`} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={`${import.meta.env.VITE_API_URL.replace('/api', '')}${formData.profilePic}`} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   formData.initials
                 )}

@@ -77,8 +77,13 @@ const RejectedJournals = () => {
   const handleResubmit = (j) => {
     updateJournalStatus(j.id, 'Processing');
     toast.success(`Resubmission initiated for "${j.title.substring(0, 40)}..."`);
-    setShowResubmit(false);
+    setSelectedJournal(null);
     setResubmitText('');
+  };
+
+  const handleDownload = (fileName) => {
+    toast.success(`Starting download: ${fileName}`);
+    setTimeout(() => toast.success(`${fileName} downloaded successfully!`), 1500);
   };
 
   const renderStars = (rating) => (
@@ -251,7 +256,7 @@ const RejectedJournals = () => {
                         <FiRefreshCw size={13} /> Resubmit Article
                       </button>
                     )}
-                    <button onClick={() => toast.info('Downloading rejection letter...')}
+                    <button onClick={() => handleDownload('Rejection_Letter.pdf')}
                       style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '9px 14px', borderRadius: '9px', border: '1.5px solid #E5E7EB', background: '#fff', color: '#374151', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}>
                       <FiDownload size={13} /> Download Letter
                     </button>
@@ -341,7 +346,7 @@ const RejectedJournals = () => {
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <button onClick={() => setSelectedJournal(j)} style={{ background: '#FEE2E2', border: 'none', borderRadius: '7px', padding: '6px', cursor: 'pointer', color: '#DC2626', display: 'flex' }} title="View"><FiEye size={14} /></button>
                       {j.canResubmit && <button onClick={() => { setSelectedJournal(j); setActiveModalTab('resubmit'); }} style={{ background: '#EFF6FF', border: 'none', borderRadius: '7px', padding: '6px', cursor: 'pointer', color: '#2563EB', display: 'flex' }} title="Resubmit"><FiRefreshCw size={14} /></button>}
-                      <button onClick={() => toast.info('Downloading letter...')} style={{ background: '#F5F3FF', border: 'none', borderRadius: '7px', padding: '6px', cursor: 'pointer', color: '#7C3AED', display: 'flex' }} title="Download"><FiDownload size={14} /></button>
+                      <button onClick={() => handleDownload('Rejection_Letter.pdf')} style={{ background: '#F5F3FF', border: 'none', borderRadius: '7px', padding: '6px', cursor: 'pointer', color: '#7C3AED', display: 'flex' }} title="Download"><FiDownload size={14} /></button>
                     </div>
                   </td>
                 </tr>
@@ -540,7 +545,7 @@ const RejectedJournals = () => {
               {/* Modal Bottom actions */}
               {activeModalTab !== 'resubmit' && (
                 <div style={{ display: 'flex', gap: '10px', marginTop: '20px', flexWrap: 'wrap' }}>
-                  <button onClick={() => toast.info('Downloading rejection letter...')}
+                  <button onClick={() => handleDownload('Rejection_Letter.pdf')}
                     style={{ flex: 1, minWidth: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '1.5px solid #E5E7EB', background: '#fff', fontWeight: 600, fontSize: '13px', cursor: 'pointer', color: '#374151' }}>
                     <FiDownload size={14} /> Download Letter
                   </button>

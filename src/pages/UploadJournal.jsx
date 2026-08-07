@@ -155,15 +155,19 @@ const UploadJournal = () => {
       confirmButtonColor: '#2563EB',
       cancelButtonColor: '#6B7280',
       confirmButtonText: 'Yes, Submit Journal',
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        addJournal({
-          ...formData,
-          keywords
-        });
-        toast.success('Journal submitted successfully!');
-        setCurrentStep(4);
-        window.scrollTo(0, 0);
+        try {
+          await addJournal({
+            ...formData,
+            keywords
+          }, mainFile);
+          toast.success('Journal submitted successfully!');
+          setCurrentStep(4);
+          window.scrollTo(0, 0);
+        } catch (error) {
+          toast.error(error.message || 'Error submitting journal');
+        }
       }
     });
   };
@@ -633,9 +637,9 @@ const UploadJournal = () => {
             <div style={{ ...cardStyle, padding: '18px 20px' }}>
               <h4 style={{ fontWeight: 700, fontSize: '14px', color: '#111827', margin: '0 0 16px' }}>Submission Progress</h4>
               <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                <div style={{ position: 'relative', width: '60px', height: '60px', borderRadius: '50%', background: `conic-gradient(#2563EB ${currentStep === 3 ? '75%' : '50%'}, #E5E7EB 0)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ position: 'relative', width: '60px', height: '60px', borderRadius: '50%', background: `conic-gradient(#2563EB ${(currentStep / 4) * 100}%, #E5E7EB 0)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, color: '#111827' }}>
-                    {currentStep === 3 ? '75%' : '50%'}
+                    {(currentStep / 4) * 100}%
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>

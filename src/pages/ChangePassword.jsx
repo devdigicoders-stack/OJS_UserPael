@@ -24,6 +24,51 @@ const getStrength = (password) => {
   return { label: 'Strong', color: '#10B981', width: '100%' };
 };
 
+const PasswordInput = ({ name, label, isVisible, placeholder, value, onChange, onToggle }) => (
+  <div style={{ marginBottom: '20px' }}>
+    <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+      {label} <span style={{ color: '#DC2626' }}>*</span>
+    </label>
+    <div style={{ position: 'relative' }}>
+      <div style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF', display: 'flex' }}>
+        <FiLock size={16} />
+      </div>
+      <input
+        type={isVisible ? 'text' : 'password'}
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        style={{
+          width: '100%', border: '1.5px solid #E5E7EB', borderRadius: '12px',
+          padding: '12px 42px 12px 40px', fontSize: '14px', color: '#111827',
+          outline: 'none', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box',
+          transition: 'all 0.2s ease', background: '#F9FAFB'
+        }}
+        onFocus={e => {
+          e.target.style.borderColor = '#2563EB';
+          e.target.style.background = '#fff';
+          e.target.style.boxShadow = '0 0 0 4px rgba(37,99,235,0.1)';
+        }}
+        onBlur={e => {
+          e.target.style.borderColor = '#E5E7EB';
+          e.target.style.background = '#F9FAFB';
+          e.target.style.boxShadow = 'none';
+        }}
+      />
+      <button
+        type="button"
+        onClick={onToggle}
+        style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'flex', padding: '4px', borderRadius: '6px' }}
+        onMouseEnter={e => e.currentTarget.style.color = '#374151'}
+        onMouseLeave={e => e.currentTarget.style.color = '#9CA3AF'}
+      >
+        {isVisible ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+      </button>
+    </div>
+  </div>
+);
+
 const ChangePassword = () => {
   const [formData, setFormData] = useState({
     currentPassword: '',
@@ -43,7 +88,7 @@ const ChangePassword = () => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.currentPassword) {
       toast.error('Please enter your current password.');
@@ -57,54 +102,35 @@ const ChangePassword = () => {
       toast.error('New passwords do not match!');
       return;
     }
-    toast.success('Password changed successfully! Please login again.');
-    setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+
+    try {
+      const token = localStorage.getItem('userToken');
+      const res = await fetch('http://localhost:5000/api/auth/user/change-password', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to change password');
+      }
+
+      toast.success('Password changed successfully!');
+      setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (error) {
+      toast.error(error.message);
+    }
   };
 
-  const PasswordInput = ({ name, label, showKey, placeholder }) => (
-    <div style={{ marginBottom: '20px' }}>
-      <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-        {label} <span style={{ color: '#DC2626' }}>*</span>
-      </label>
-      <div style={{ position: 'relative' }}>
-        <div style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF', display: 'flex' }}>
-          <FiLock size={16} />
-        </div>
-        <input
-          type={show[showKey] ? 'text' : 'password'}
-          name={name}
-          value={formData[name]}
-          onChange={handleChange}
-          placeholder={placeholder}
-          style={{
-            width: '100%', border: '1.5px solid #E5E7EB', borderRadius: '12px',
-            padding: '12px 42px 12px 40px', fontSize: '14px', color: '#111827',
-            outline: 'none', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box',
-            transition: 'all 0.2s ease', background: '#F9FAFB'
-          }}
-          onFocus={e => {
-            e.target.style.borderColor = '#2563EB';
-            e.target.style.background = '#fff';
-            e.target.style.boxShadow = '0 0 0 4px rgba(37,99,235,0.1)';
-          }}
-          onBlur={e => {
-            e.target.style.borderColor = '#E5E7EB';
-            e.target.style.background = '#F9FAFB';
-            e.target.style.boxShadow = 'none';
-          }}
-        />
-        <button
-          type="button"
-          onClick={() => setShow(prev => ({ ...prev, [showKey]: !prev[showKey] }))}
-          style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'flex', padding: '4px', borderRadius: '6px' }}
-          onMouseEnter={e => e.currentTarget.style.color = '#374151'}
-          onMouseLeave={e => e.currentTarget.style.color = '#9CA3AF'}
-        >
-          {show[showKey] ? <FiEyeOff size={16} /> : <FiEye size={16} />}
-        </button>
-      </div>
-    </div>
-  );
+
 
   return (
     <div style={{ fontFamily: 'Inter, sans-serif' }}>
@@ -156,14 +182,38 @@ const ChangePassword = () => {
 
           <form onSubmit={handleSubmit} style={{ padding: '30px' }}>
             
-            <PasswordInput name="currentPassword" label="Current Password" showKey="current" placeholder="Enter your current password" />
+            <PasswordInput 
+              name="currentPassword" 
+              label="Current Password" 
+              isVisible={show.current} 
+              placeholder="Enter your current password" 
+              value={formData.currentPassword}
+              onChange={handleChange}
+              onToggle={() => setShow(prev => ({ ...prev, current: !prev.current }))}
+            />
             
             <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, #E5E7EB, transparent)', margin: '24px 0' }} />
 
             <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: '280px' }}>
-                <PasswordInput name="newPassword" label="New Password" showKey="new" placeholder="Create a strong new password" />
-                <PasswordInput name="confirmPassword" label="Confirm New Password" showKey="confirm" placeholder="Re-enter your new password" />
+                <PasswordInput 
+                  name="newPassword" 
+                  label="New Password" 
+                  isVisible={show.new} 
+                  placeholder="Create a strong new password"
+                  value={formData.newPassword}
+                  onChange={handleChange}
+                  onToggle={() => setShow(prev => ({ ...prev, new: !prev.new }))} 
+                />
+                <PasswordInput 
+                  name="confirmPassword" 
+                  label="Confirm New Password" 
+                  isVisible={show.confirm} 
+                  placeholder="Re-enter your new password"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  onToggle={() => setShow(prev => ({ ...prev, confirm: !prev.confirm }))} 
+                />
               </div>
               
               {/* Requirements & Strength Panel */}

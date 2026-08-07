@@ -11,6 +11,7 @@ import {
   BarChart, Bar
 } from 'recharts';
 import { useJournalContext } from '../context/JournalContext';
+import CustomActionTooltip from '../components/Tooltip';
 
 const DEPT_COLORS = ['#3B82F6', '#8B5CF6', '#F59E0B', '#14B8A6', '#EF4444', '#EC4899', '#06B6D4'];
 
@@ -113,15 +114,54 @@ const Dashboard = () => {
   }, {});
   const deptData = Object.keys(deptCounts).map(k => ({ name: k.replace(' ', '\n'), value: deptCounts[k] }));
 
-  // Trend Data (mocking past months, but adding current journals count to May)
-  const submissionTrend = [
-    { month: 'Jan', value: 5 }, { month: 'Feb', value: 8 },
-    { month: 'Mar', value: 11 }, { month: 'Apr', value: 17 },
-    { month: 'May', value: stats.total }, // dynamic
-  ];
+  // Dynamic Trend Data
+  const currentYear = new Date().getFullYear();
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  
+  const monthlyCounts = Array(12).fill(0);
+  journals.forEach(j => {
+    const d = new Date(j.date);
+    if (!isNaN(d) && d.getFullYear() === currentYear) {
+      monthlyCounts[d.getMonth()]++;
+    }
+  });
+
+  const submissionTrend = months.map((month, index) => ({
+    month,
+    value: monthlyCounts[index]
+  })).slice(0, new Date().getMonth() + 1); // Show up to current month
+
+  // Dynamic Recent Activities based on journals
+  const generatedActivities = journals.slice(0, 5).map(j => {
+    let type = 'info';
+    let text = `Your journal "${j.title}" is ${j.status.toLowerCase()}.`;
+    
+    if (j.status === 'Published') {
+      type = 'success';
+      text = `Your journal "${j.title}" has been published.`;
+    } else if (j.status === 'Rejected') {
+      type = 'error';
+      text = `Your journal "${j.title}" has been rejected.`;
+    } else if (j.status === 'Processing') {
+      type = 'info';
+      text = `You submitted a new journal: "${j.title}".`;
+    }
+
+    return {
+      text,
+      date: j.date,
+      time: '12:00 PM', // Fallback since we don't have exact time in formatted date
+      type
+    };
+  });
 
   const recentJournals = journals.slice(0, 5);
-  const recentActivities = activities.slice(0, 5);
+  
+  // Merge context activities (like profile updates) with generated journal activities
+  const allActivities = [...activities, ...generatedActivities];
+  // Simple deduplication based on text just in case
+  const uniqueActivities = Array.from(new Map(allActivities.map(a => [a.text, a])).values());
+  const recentActivities = uniqueActivities.slice(0, 5);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', fontFamily: 'Inter, sans-serif' }}>
@@ -244,7 +284,9 @@ const Dashboard = () => {
                           </span>
                         </td>
                         <td style={{ padding: '12px 16px' }}>
-                          <Link to="/dashboard/journal-details" style={{ color: '#2563EB', display: 'flex' }}><FiEye size={16} /></Link>
+                          <CustomActionTooltip text="View Details">
+                            <Link to="/dashboard/journal-details" style={{ color: '#2563EB', display: 'flex' }}><FiEye size={16} /></Link>
+                          </CustomActionTooltip>
                         </td>
                       </tr>
                     );

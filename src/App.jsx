@@ -34,9 +34,13 @@ function App() {
           <Route path="upload-journal" element={<UploadJournal />} />
           <Route path="journal-status" element={<JournalStatus />} />
           <Route path="journal-details" element={<JournalDetails />} />
+          <Route path="journal-details/:id" element={<JournalDetails />} />
           <Route path="track-status" element={<TrackStatus />} />
+          <Route path="track-status/:id" element={<TrackStatus />} />
           <Route path="journal-files" element={<JournalFiles />} />
+          <Route path="journal-files/:id" element={<JournalFiles />} />
           <Route path="history" element={<JournalHistory />} />
+          <Route path="history/:id" element={<JournalHistory />} />
           <Route path="approved" element={<ApprovedJournals />} />
           <Route path="rejected" element={<RejectedJournals />} />
           <Route path="profile" element={<Profile />} />

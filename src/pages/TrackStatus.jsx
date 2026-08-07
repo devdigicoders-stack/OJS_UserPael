@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   FiChevronRight, FiArrowLeft, FiRefreshCw, FiCopy, FiCalendar, FiBookOpen,
   FiFileText, FiCheck, FiMail, FiBook, FiExternalLink, FiSearch, FiUsers,
@@ -11,8 +11,9 @@ import { useJournalContext } from '../context/JournalContext';
 
 const TrackStatus = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
   const { journals } = useJournalContext();
-  const currentJournal = journals[0] || {
+  const currentJournal = journals.find(j => j.id === id) || journals[0] || {
     id: 'OJS-2024-0512', title: 'A Novel Approach to AI in Healthcare',
     dept: 'Computer Science', primaryAuthor: 'Dr. Rahul Sharma',
     status: 'Published', date: '12 May 2024'
@@ -65,7 +66,7 @@ const TrackStatus = () => {
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
-            onClick={() => navigate('/dashboard/journal-details')}
+            onClick={() => navigate(`/dashboard/journal-details/${currentJournal.id}`)}
             style={{
               display: 'flex', alignItems: 'center', gap: '6px',
               background: '#fff', border: '1.5px solid #E5E7EB',
@@ -95,7 +96,7 @@ const TrackStatus = () => {
       <div style={{ ...cardStyle, padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
           <img
-            src="https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=160&auto=format&fit=crop&q=80"
+            src={`https://picsum.photos/seed/${currentJournal.id}/160/140`}
             alt="journal-pic"
             style={{ width: '90px', height: '110px', borderRadius: '10px', objectFit: 'cover', border: '1px solid #E5E7EB', flexShrink: 0 }}
           />
@@ -121,7 +122,7 @@ const TrackStatus = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: '#6B7280', marginBottom: '4px' }}>
                 <FiCalendar size={13} /> Submitted On
               </div>
-              <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827', margin: 0 }}>12 May 2024</p>
+              <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827', margin: 0 }}>{currentJournal.date}</p>
               <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '2px 0 0' }}>10:30 AM</p>
             </div>
             <div style={{ width: '1px', background: '#E5E7EB' }} />
@@ -129,7 +130,7 @@ const TrackStatus = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: '#6B7280', marginBottom: '4px' }}>
                 <FiCalendar size={13} /> Last Updated
               </div>
-              <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827', margin: 0 }}>20 May 2024</p>
+              <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827', margin: 0 }}>{currentJournal.date}</p>
               <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '2px 0 0' }}>11:20 AM</p>
             </div>
             <div style={{ width: '1px', background: '#E5E7EB' }} />
@@ -137,8 +138,8 @@ const TrackStatus = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: '#6B7280', marginBottom: '4px' }}>
                 <FiInfo size={13} /> Current Status
               </div>
-              <span style={{ ...badgeStyle, padding: '3px 8px', fontSize: '11px' }}><div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#137333' }} /> Published</span>
-              <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '4px 0 0' }}>20 May 2024, 11:20 AM</p>
+              <span style={{ ...badgeStyle, padding: '3px 8px', fontSize: '11px' }}><div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#137333' }} /> {currentJournal.status}</span>
+              <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '4px 0 0' }}>{currentJournal.date}, 11:20 AM</p>
             </div>
           </div>
         </div>

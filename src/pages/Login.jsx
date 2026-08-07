@@ -44,10 +44,37 @@ const Login = () => {
       return;
     }
     setLoading(true);
-    await new Promise(res => setTimeout(res, 1500));
-    setLoading(false);
-    toast.success('Welcome back! Login successful.');
-    navigate('/dashboard');
+    
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/user/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password,
+          role: 'Author' // Defaulting to Author as per User Panel's primary use case
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Save token and user details
+        localStorage.setItem('userToken', data.token);
+        localStorage.setItem('userProfile', JSON.stringify(data.user));
+        
+        toast.success('Welcome back! Login successful.');
+        navigate('/dashboard');
+      } else {
+        toast.error(data.message || 'Login failed. Please check your credentials.');
+      }
+    } catch (error) {
+      toast.error('Error connecting to the server.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const inputStyle = (field) => ({

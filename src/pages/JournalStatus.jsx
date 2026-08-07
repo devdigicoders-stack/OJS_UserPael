@@ -7,6 +7,7 @@ import {
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { useJournalContext } from '../context/JournalContext';
+import Tooltip from '../components/Tooltip';
 
 const JournalStatus = () => {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ const JournalStatus = () => {
       case 'Published': return { background: '#DCFCE7', color: '#16A34A' };
       case 'Under Review': return { background: '#FEF3C7', color: '#D97706' };
       case 'Processing': return { background: '#EFF6FF', color: '#2563EB' };
+      case 'Pending Review': return { background: '#F1F5F9', color: '#64748B' };
       case 'Rejected': return { background: '#FEE2E2', color: '#DC2626' };
       default: return { background: '#F3F4F6', color: '#4B5563' };
     }
@@ -50,18 +52,38 @@ const JournalStatus = () => {
   // Filter Journals
   const filteredJournals = journals.filter(j => {
     const matchSearch = j.title.toLowerCase().includes(searchTerm.toLowerCase()) || j.id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchStatus = statusFilter === 'All' || j.status === statusFilter;
+    
+    let matchStatus = false;
+    if (statusFilter === 'All') {
+      matchStatus = true;
+    } else if (statusFilter === 'Under Review') {
+      matchStatus = ['Pending Review', 'Under Review', 'Reviewed'].includes(j.status);
+    } else if (statusFilter === 'Processing') {
+      matchStatus = ['Processed', 'Approved'].includes(j.status);
+    } else {
+      matchStatus = j.status === statusFilter;
+    }
+
     const matchYear = yearFilter === 'All' || j.date.includes(yearFilter);
     return matchSearch && matchStatus && matchYear;
   });
 
   const STATS = [
     { label: 'Total Submissions', count: journals.length, color: '#EFF6FF', textColor: '#2563EB', icon: FiFileText },
-    { label: 'Under Review', count: journals.filter(j => j.status === 'Under Review').length, color: '#FEF3C7', textColor: '#D97706', icon: FiClock },
-    { label: 'Processing', count: journals.filter(j => j.status === 'Processing').length, color: '#EFF6FF', textColor: '#3B82F6', icon: FiRefreshCw },
+    { label: 'Under Review', count: journals.filter(j => ['Pending Review', 'Under Review', 'Reviewed'].includes(j.status)).length, color: '#FEF3C7', textColor: '#D97706', icon: FiClock },
+    { label: 'Processing', count: journals.filter(j => ['Processed', 'Approved'].includes(j.status)).length, color: '#EFF6FF', textColor: '#3B82F6', icon: FiRefreshCw },
     { label: 'Published', count: journals.filter(j => j.status === 'Published').length, color: '#DCFCE7', textColor: '#16A34A', icon: FiCheckCircle },
     { label: 'Rejected', count: journals.filter(j => j.status === 'Rejected').length, color: '#FEE2E2', textColor: '#DC2626', icon: FiXCircle },
   ];
+
+  const handleViewAll = (label) => {
+    if (label === 'Total Submissions') {
+      setStatusFilter('All');
+    } else {
+      setStatusFilter(label);
+    }
+    window.scrollTo({ top: 350, behavior: 'smooth' });
+  };
 
   return (
     <div style={{ fontFamily: 'Inter, sans-serif', display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -99,7 +121,13 @@ const JournalStatus = () => {
         {STATS.map((s, idx) => {
           const Icon = s.icon;
           return (
-            <div key={idx} style={{ ...cardStyle, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div 
+              key={idx} 
+              onClick={() => handleViewAll(s.label)}
+              style={{ ...cardStyle, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer', transition: 'transform 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ background: s.color, borderRadius: '8px', padding: '8px', display: 'flex' }}>
                   <Icon size={16} color={s.textColor} />
@@ -108,7 +136,7 @@ const JournalStatus = () => {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '4px' }}>
                 <span style={{ fontSize: '24px', fontWeight: 700, color: '#111827' }}>{s.count}</span>
-                <span style={{ fontSize: '11px', color: s.textColor, fontWeight: 600, cursor: 'pointer' }}>View all →</span>
+                <span style={{ fontSize: '11px', color: s.textColor, fontWeight: 600 }}>View all →</span>
               </div>
             </div>
           );
@@ -133,12 +161,13 @@ const JournalStatus = () => {
             <option value="Published">Published</option>
             <option value="Under Review">Under Review</option>
             <option value="Processing">Processing</option>
+            <option value="Pending Review">Pending Review</option>
             <option value="Rejected">Rejected</option>
           </select>
           <select value={yearFilter} onChange={e => setYearFilter(e.target.value)} style={selectStyle}>
             <option value="All">All Years</option>
-            <option value="2024">2024</option>
-            <option value="2023">2023</option>
+            <option value={new Date().getFullYear().toString()}>{new Date().getFullYear()}</option>
+            <option value={(new Date().getFullYear() - 1).toString()}>{new Date().getFullYear() - 1}</option>
           </select>
           <button style={{ ...selectStyle, display: 'flex', alignItems: 'center', gap: '6px', background: '#F8FAFC' }}>
             <FiFilter size={14} /> Filter
@@ -189,16 +218,22 @@ const JournalStatus = () => {
                     {j.date}
                   </td>
                   <td style={{ padding: '16px', textAlign: 'center' }}>
-                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }}>
-                      <button onClick={() => navigate('/dashboard/history')} style={{ background: '#EFF6FF', border: 'none', color: '#2563EB', padding: '6px', borderRadius: '6px', cursor: 'pointer', display: 'flex' }} title="View Timeline">
-                        <FiClock size={14} />
-                      </button>
-                      <button onClick={() => navigate('/dashboard/journal-details')} style={{ background: '#EFF6FF', border: 'none', color: '#2563EB', padding: '6px', borderRadius: '6px', cursor: 'pointer', display: 'flex' }} title="View Details">
-                        <FiEye size={14} />
-                      </button>
-                      <button style={{ background: '#EFF6FF', border: 'none', color: '#2563EB', padding: '6px', borderRadius: '6px', cursor: 'pointer', display: 'flex' }}>
-                        <FiDownload size={14} />
-                      </button>
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
+                      <Tooltip text="View Timeline">
+                        <button onClick={() => navigate(`/dashboard/history/${j.id}`)} style={{ background: '#EFF6FF', border: 'none', color: '#2563EB', padding: '6px', borderRadius: '6px', cursor: 'pointer', display: 'flex' }}>
+                          <FiClock size={14} />
+                        </button>
+                      </Tooltip>
+                      <Tooltip text="View Details">
+                        <button onClick={() => navigate(`/dashboard/journal-details/${j.id}`)} style={{ background: '#EFF6FF', border: 'none', color: '#2563EB', padding: '6px', borderRadius: '6px', cursor: 'pointer', display: 'flex' }}>
+                          <FiEye size={14} />
+                        </button>
+                      </Tooltip>
+                      <Tooltip text="Download">
+                        <button style={{ background: '#EFF6FF', border: 'none', color: '#2563EB', padding: '6px', borderRadius: '6px', cursor: 'pointer', display: 'flex' }}>
+                          <FiDownload size={14} />
+                        </button>
+                      </Tooltip>
                     </div>
                   </td>
                 </tr>

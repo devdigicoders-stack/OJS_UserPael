@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import {
   FiSearch, FiCalendar, FiRefreshCw, FiChevronRight,
   FiFileText, FiEye, FiDownload, FiMail, FiCopy,
@@ -9,15 +9,17 @@ import {
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { useJournalContext } from '../context/JournalContext';
+import Tooltip from '../components/Tooltip';
 
 const JournalHistory = () => {
+  const { id } = useParams();
   const { journals } = useJournalContext();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Status');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
-  const currentJournal = journals[0]; // For demo, use the most recent journal
+  const currentJournal = journals.find(j => j.id === id) || journals[0]; // Fetch correct journal
 
   const copyDOI = () => {
     if(!currentJournal) return;
@@ -36,16 +38,36 @@ const JournalHistory = () => {
     ];
 
     let currentStepIndex = 0;
-    if (status === 'Processing') currentStepIndex = 0;
-    if (status === 'Under Review') currentStepIndex = 2;
-    if (status === 'Published') currentStepIndex = 5;
-    if (status === 'Rejected') currentStepIndex = 4; // Decision phase
+    
+    switch(status) {
+      case 'Pending Review':
+        currentStepIndex = 1;
+        break;
+      case 'Under Review':
+        currentStepIndex = 2;
+        break;
+      case 'Reviewed':
+        currentStepIndex = 3;
+        break;
+      case 'Processed':
+      case 'Approved':
+      case 'Rejected':
+        currentStepIndex = 4;
+        break;
+      case 'Published':
+        currentStepIndex = 5;
+        break;
+      default:
+        currentStepIndex = 0;
+    }
 
     return defaultStages.map((s, idx) => {
       let stageStatus = 'Upcoming';
       if (idx < currentStepIndex) stageStatus = 'Completed';
       if (idx === currentStepIndex) {
-        stageStatus = status === 'Processing' ? 'Completed' : (status === 'Rejected' ? 'Rejected' : 'Under Review');
+        if (status === 'Rejected') stageStatus = 'Rejected';
+        else if (status === 'Published') stageStatus = 'Completed';
+        else stageStatus = 'Under Review'; // In progress
       }
       if (status === 'Published') stageStatus = 'Completed';
 
@@ -162,9 +184,11 @@ const JournalHistory = () => {
             <p style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: 500, margin: '0 0 4px' }}>🔗 Article ID</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}>
               <p style={{ fontSize: '12px', fontWeight: 600, color: '#2563EB', margin: 0 }}>{currentJournal.id}</p>
-              <button onClick={copyDOI} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280', padding: 0, display: 'flex' }}>
-                <FiCopy size={12} />
-              </button>
+              <Tooltip text="Copy ID">
+                <button onClick={copyDOI} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280', padding: 0, display: 'flex' }}>
+                  <FiCopy size={12} />
+                </button>
+              </Tooltip>
             </div>
           </div>
         </div>

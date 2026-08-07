@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FiChevronRight, FiEdit3, FiCheck, FiCamera, FiGlobe,
@@ -14,14 +14,111 @@ import { useJournalContext } from '../context/JournalContext';
 const TABS = ['Personal Info', 'Academic Info', 'Research Interests', 'Social & Links'];
 
 const Profile = () => {
-  const { profile, updateProfile, journals } = useJournalContext();
+  const { updateProfile, journals, userStats } = useJournalContext();
   const [activeTab, setActiveTab] = useState('Personal Info');
   const [editMode, setEditMode] = useState(false);
+  const fileInputRef = useRef(null);
 
+  // Initialize with some default safe fields so UI doesn't break
   const [formData, setFormData] = useState({
-    ...profile,
-    newSpec: ''
+    name: '', title: '', firstName: '', lastName: '', email: '', phone: '',
+    institution: '', department: '', designation: '', 
+    city: '', country: '', dob: '', gender: '', bio: '',
+    orcid: '', researcherId: '', scopusId: '', googleScholar: '',
+    website: '', twitter: '', linkedin: '', researchGate: '',
+    specializations: [], newSpec: '', initials: 'U', profilePic: ''
   });
+
+  React.useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem('userToken');
+      if (!token) return;
+
+      const response = await fetch('http://localhost:5000/api/auth/user/profile', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        // Map backend name to firstName and lastName for the UI
+        let fName = data.name || '';
+        let lName = '';
+        if (data.name && data.name.includes(' ')) {
+          const parts = data.name.split(' ');
+          lName = parts.pop();
+          fName = parts.join(' ');
+        }
+
+        setFormData(prev => ({
+          ...prev,
+          name: data.name || '',
+          firstName: fName,
+          lastName: lName,
+          email: data.email || '',
+          phone: data.phone || '',
+          institution: data.institution || '',
+          department: data.department || '',
+          designation: data.designation || '',
+          initials: data.initials || 'U',
+          title: data.title || '',
+          dob: data.dob || '',
+          gender: data.gender || '',
+          city: data.city || '',
+          country: data.country || '',
+          bio: data.bio || '',
+          orcid: data.orcid || '',
+          researcherId: data.researcherId || '',
+          scopusId: data.scopusId || '',
+          googleScholar: data.googleScholar || '',
+          specializations: data.specializations || [],
+          website: data.website || '',
+          twitter: data.twitter || '',
+          linkedin: data.linkedin || '',
+          researchGate: data.researchGate || '',
+          profilePic: data.profilePic || ''
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
+  };
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    try {
+      const token = localStorage.getItem('userToken');
+      if (!token) return;
+
+      const response = await fetch('http://localhost:5000/api/auth/user/avatar', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        toast.success('Avatar uploaded successfully!');
+        setFormData(prev => ({ ...prev, profilePic: data.profilePic }));
+        updateProfile(data); // Assuming updateProfile merges data
+      } else {
+        toast.error(data.message || 'Failed to upload avatar');
+      }
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast.error('Error uploading avatar');
+    }
+  };
 
   const handleChange = (e) => setFormData(p => ({ ...p, [e.target.name]: e.target.value }));
 
@@ -33,10 +130,40 @@ const Profile = () => {
 
   const removeSpec = (i) => setFormData(p => ({ ...p, specializations: p.specializations.filter((_, idx) => idx !== i) }));
 
-  const handleSave = () => { 
-    updateProfile(formData);
-    toast.success('Profile updated successfully!'); 
-    setEditMode(false); 
+  const handleSave = async () => {
+    try {
+      const token = localStorage.getItem('userToken');
+      if (!token) return;
+
+      const response = await fetch('http://localhost:5000/api/auth/user/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('Profile updated successfully!');
+        
+        // Update initials locally if name changed
+        if (data.initials) {
+          setFormData(prev => ({ ...prev, initials: data.initials }));
+        }
+        
+        // Also update Context if necessary
+        updateProfile(data);
+        setEditMode(false);
+      } else {
+        toast.error(data.message || 'Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Error connecting to the server');
+    }
   };
 
   const copyToClipboard = (text) => { navigator.clipboard.writeText(text); toast.success('Copied!'); };
@@ -50,11 +177,17 @@ const Profile = () => {
     boxSizing: 'border-box', transition: 'border-color 0.15s',
   });
 
+  const formatStat = (num) => {
+    if (!num) return '0';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    return num.toString();
+  };
+
   const stats = [
-    { label: 'Articles', val: journals.length.toString(), icon: FiFileText, color: '#2563EB', bg: '#EFF6FF' },
-    { label: 'Citations', val: (journals.length * 12).toString(), icon: FiTrendingUp, color: '#059669', bg: '#ECFDF5' },
-    { label: 'Views', val: `${(journals.length * 1.2).toFixed(1)}K`, icon: FiEye, color: '#7C3AED', bg: '#F5F3FF' },
-    { label: 'Downloads', val: `${(journals.length * 0.4).toFixed(1)}K`, icon: FiDownload, color: '#D97706', bg: '#FFFBEB' },
+    { label: 'Articles', val: userStats?.total || journals.length.toString(), icon: FiFileText, color: '#2563EB', bg: '#EFF6FF' },
+    { label: 'Citations', val: formatStat(userStats?.totalCitations), icon: FiTrendingUp, color: '#059669', bg: '#ECFDF5' },
+    { label: 'Views', val: formatStat(userStats?.totalViews), icon: FiEye, color: '#7C3AED', bg: '#F5F3FF' },
+    { label: 'Downloads', val: formatStat(userStats?.totalDownloads), icon: FiDownload, color: '#D97706', bg: '#FFFBEB' },
   ];
 
   return (
@@ -96,6 +229,13 @@ const Profile = () => {
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '18px' }}>
             {/* Avatar */}
             <div style={{ position: 'relative', marginTop: '-44px' }}>
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={handleAvatarUpload}
+              />
               <div style={{
                 width: '88px', height: '88px', borderRadius: '50%',
                 background: 'linear-gradient(135deg, #1E3A8A, #2563EB)',
@@ -104,10 +244,15 @@ const Profile = () => {
                 fontFamily: 'Poppins, sans-serif',
                 border: '4px solid #fff',
                 boxShadow: '0 4px 20px rgba(37,99,235,0.35)',
+                overflow: 'hidden'
               }}>
-                RS
+                {formData.profilePic ? (
+                  <img src={`http://localhost:5000${formData.profilePic}`} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  formData.initials
+                )}
               </div>
-              <button onClick={() => toast.info('Photo upload')}
+              <button onClick={() => fileInputRef.current.click()}
                 style={{ position: 'absolute', bottom: '2px', right: '2px', width: '26px', height: '26px', borderRadius: '50%', background: '#2563EB', border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff' }}>
                 <FiCamera size={12} />
               </button>
@@ -189,8 +334,8 @@ const Profile = () => {
                 { icon: FiPhone, val: formData.phone, color: '#059669' },
                 { icon: FiMapPin, val: `${formData.city}, ${formData.country}`, color: '#D97706' },
                 { icon: FiCalendar, val: formData.dob, color: '#7C3AED' },
-              ].map(({ icon: Icon, val, color }) => (
-                <div key={val} style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+              ].map(({ icon: Icon, val, color }, index) => (
+                <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
                   <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: '#F9FAFB', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <Icon size={13} color={color} />
                   </div>
@@ -225,30 +370,7 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* Social Links */}
-          <div style={{ background: '#fff', borderRadius: '14px', border: '1px solid #E9ECF0', boxShadow: '0 1px 6px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-            <div style={{ padding: '14px 18px', background: 'linear-gradient(135deg, #F8FAFF, #ECFEFF)', borderBottom: '1px solid #E9ECF0' }}>
-              <p style={{ fontWeight: 700, fontSize: '13.5px', color: '#111827', margin: 0, fontFamily: 'Poppins, sans-serif' }}>Online Profiles</p>
-            </div>
-            <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {[
-                { icon: FiGlobe, label: 'Website', val: formData.website, color: '#374151', bg: '#F9FAFB' },
-                { icon: FiTwitter, label: 'Twitter', val: formData.twitter, color: '#1DA1F2', bg: '#EFF8FF' },
-                { icon: FiLinkedin, label: 'LinkedIn', val: 'View Profile', color: '#0A66C2', bg: '#EFF6FF' },
-                { icon: FiLink, label: 'ResearchGate', val: 'View Profile', color: '#00CCBB', bg: '#ECFEF9' },
-              ].map(({ icon: Icon, label, val, color, bg }) => (
-                <a key={label} href="#"
-                  style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '9px 10px', borderRadius: '9px', background: bg, textDecoration: 'none', border: '1px solid #E5E7EB' }}>
-                  <Icon size={14} color={color} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: '10.5px', color: '#9CA3AF', margin: 0, textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.4px' }}>{label}</p>
-                    <p style={{ fontSize: '11.5px', color, fontWeight: 600, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{val}</p>
-                  </div>
-                  <FiExternalLink size={11} color="#D1D5DB" />
-                </a>
-              ))}
-            </div>
-          </div>
+
         </div>
 
         {/* ─── Right: Tabbed Form ─── */}

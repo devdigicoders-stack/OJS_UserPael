@@ -6,6 +6,7 @@ import {
   FiLogOut, FiMenu, FiX, FiBell, FiMoon, FiSearch
 } from 'react-icons/fi';
 import Swal from 'sweetalert2';
+import { useJournalContext } from '../context/JournalContext';
 
 const menuItems = [
   { path: '/dashboard', name: 'Dashboard', icon: FiHome },
@@ -47,8 +48,14 @@ const DashboardLayout = () => {
 
   const currentPage = [...menuItems, ...bottomItems].find(m => isActive(m.path))?.name || 'Dashboard';
 
+  const { profile } = useJournalContext();
+  const userName = profile?.name || 'Author';
+  const userInitials = profile?.avatar || userName.substring(0, 2).toUpperCase() || 'US';
+  const userInstitution = profile?.institution || 'OJS Portal';
+  const userDesignation = profile?.designation || 'Author';
+
   return (
-    <div style={{ display: 'flex', height: '100vh', background: '#F1F5F9', fontFamily: 'Inter, sans-serif', overflow: 'hidden' }}>
+    <div className="dashboard-layout" style={{ display: 'flex', height: '100vh', background: '#F1F5F9', fontFamily: 'Inter, sans-serif', overflow: 'hidden' }}>
 
       {/* Mobile Overlay */}
       {sidebarOpen && (
@@ -59,7 +66,7 @@ const DashboardLayout = () => {
       )}
 
       {/* ── Sidebar ── */}
-      <aside style={{
+      <aside className="dashboard-sidebar" style={{
         width: '220px', flexShrink: 0,
         background: 'linear-gradient(180deg, #0f2460 0%, #1a3a8f 60%, #0d5c52 100%)',
         display: 'flex', flexDirection: 'column',
@@ -152,10 +159,10 @@ const DashboardLayout = () => {
       </aside>
 
       {/* ── Main Content ── */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
+      <div className="dashboard-main" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
 
         {/* ── Top Header ── */}
-        <header style={{
+        <header className="dashboard-header" style={{
           background: '#fff', borderBottom: '1px solid #E5E7EB',
           height: '64px', display: 'flex', alignItems: 'center',
           padding: '0 24px', gap: '16px', flexShrink: 0,
@@ -174,9 +181,9 @@ const DashboardLayout = () => {
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: '12px', color: '#9CA3AF', fontWeight: 500 }}>Welcome Back,</p>
             <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#111827', fontFamily: 'Poppins, sans-serif', margin: 0 }}>
-              Dr. Rahul Sharma 👋
+              {userName} 👋
             </h2>
-            <p style={{ fontSize: '11px', color: '#9CA3AF', margin: 0 }}>ABC University | Computer Science Department</p>
+            <p style={{ fontSize: '11px', color: '#9CA3AF', margin: 0 }}>{userInstitution} | {userDesignation}</p>
           </div>
 
           {/* Search */}
@@ -206,10 +213,10 @@ const DashboardLayout = () => {
             {/* Profile */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 12px', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '12px', cursor: 'pointer' }}>
               <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '13px' }}>
-                RS
+                {userInitials}
               </div>
               <div>
-                <p style={{ fontSize: '12px', fontWeight: 600, color: '#111827', margin: 0, lineHeight: 1.3 }}>Dr. Rahul Sharma</p>
+                <p style={{ fontSize: '12px', fontWeight: 600, color: '#111827', margin: 0, lineHeight: 1.3 }}>{userName}</p>
                 <p style={{ fontSize: '10px', color: '#9CA3AF', margin: 0 }}>Author</p>
               </div>
             </div>

@@ -17,29 +17,29 @@ const SORT_OPTIONS = ['Newest First', 'Oldest First', 'Most Cited', 'Most Viewed
 
 const ApprovedJournals = () => {
   const { journals } = useJournalContext();
-  
-  const journalsData = journals.filter(j => j.status === 'Published').map(j => ({
+
+  const journalsData = journals.filter(j => ['Published', 'Approved', 'Reviewed'].includes(j.status)).map(j => ({
     id: j.id,
     title: j.title,
     journal: j.category || 'General',
-    dept: `Department of ${j.dept}`,
+    dept: `Department of ${j.dept?.replace('Department of ', '') || 'Unknown'}`,
     authors: [j.primaryAuthor || 'Unknown Author'],
-    doi: `10.1234/${j.id.toLowerCase()}`,
+    doi: j.doi || `10.1234/${j.id.toLowerCase()}`,
     submittedDate: j.date,
     approvedDate: j.date,
-    publishedDate: j.date,
-    volume: 'Volume 1, Issue 1',
-    pages: `${j.pages || '10'} pages`,
+    publishedDate: j.publishDate || j.date,
+    volume: j.volume && j.volume !== '-' ? `Volume ${j.volume}, Issue ${j.issue}` : 'Volume 1, Issue 1',
+    pages: j.pages ? `${j.pages} pages` : '10 pages',
     status: j.status,
     category: j.category,
     type: 'Research Article',
     openAccess: true,
-    views: Math.floor(Math.random() * 1000),
-    downloads: Math.floor(Math.random() * 500),
-    citations: Math.floor(Math.random() * 50),
-    impactFactor: 4.5,
+    views: j.views || 0,
+    downloads: j.downloads || 0,
+    citations: j.citations || 0,
+    impactFactor: j.impactFactor || 0,
     abstract: j.abstract || 'Abstract not available.',
-    keywords: j.keywords || ['Research', j.category],
+    keywords: j.keywords?.length ? j.keywords : ['Research', j.category],
     color: '#2563EB',
     abbr: j.category ? j.category.substring(0,3).toUpperCase() : 'JNL',
   }));

@@ -99,10 +99,36 @@ const Register = () => {
       return;
     }
     setLoading(true);
-    await new Promise(res => setTimeout(res, 1500));
-    setLoading(false);
-    toast.success('Account created successfully! Please login.');
-    navigate('/login');
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/user/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fullName: form.fullName,
+          email: form.email,
+          phone: form.phone,
+          institution: form.institution,
+          department: form.department,
+          designation: form.designation,
+          password: form.password
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('Account created successfully! Please login.');
+        navigate('/login');
+      } else {
+        toast.error(data.message || 'Registration failed. Please try again.');
+      }
+    } catch (error) {
+      toast.error('Error connecting to the server.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const inputStyle = (field) => ({

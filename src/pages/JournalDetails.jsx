@@ -1,34 +1,92 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   FiChevronRight, FiArrowLeft, FiActivity, FiCopy, FiCalendar, FiBookOpen,
   FiFileText, FiLayers, FiClock, FiCheck, FiDownload, FiExternalLink,
   FiEye, FiShare2, FiPrinter, FiCheckCircle, FiInfo, FiUser, FiUsers, FiEdit3, FiSend,
   FiPlus, FiMoreVertical, FiMessageSquare, FiPaperclip, FiSmile, FiMail, FiHelpCircle,
   FiLink, FiArrowRight, FiBook, FiUploadCloud, FiEdit, FiAward, FiStar, FiUpload, FiMessageCircle,
-  FiGlobe, FiLock, FiTwitter, FiLinkedin, FiFacebook
+  FiGlobe, FiLock, FiTwitter, FiLinkedin, FiFacebook, FiXCircle
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { useJournalContext } from '../context/JournalContext';
 
 const JournalDetails = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
   const { journals } = useJournalContext();
-  const currentJournal = journals[0] || {
+  const currentJournal = journals.find(j => j.id === id) || journals[0] || {
     id: 'OJS-2024-0512', title: 'A Novel Approach to AI in Healthcare',
     dept: 'Computer Science', primaryAuthor: 'Dr. Rahul Sharma',
     status: 'Published', date: '12 May 2024'
   };
 
   const [activeTab, setActiveTab] = useState('Summary');
-  const [activeMessage, setActiveMessage] = useState(1);
   const [activeSubTab, setActiveSubTab] = useState('Publication Details');
-  const [activeCommMsg, setActiveCommMsg] = useState(1);
-  const [commReplyText, setCommReplyText] = useState('');
+  const [activeMessage, setActiveMessage] = useState(1);
+  const [showArticleModal, setShowArticleModal] = useState(false);
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
     toast.success(`Copied: ${text}`);
+  };
+
+  const forceDownload = async (fileUrl, fileName) => {
+    try {
+      const response = await fetch(fileUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error('Failed to download file');
+    }
+  };
+
+  const handleDownload = (type) => {
+    if (type === 'pdf') {
+      if (currentJournal.mainFilePath) {
+        const fileUrl = `http://localhost:5000/${currentJournal.mainFilePath.replace(/\\/g, '/')}`;
+        const fileName = currentJournal.mainFilePath.split('/').pop().split('\\').pop() || 'Article_Manuscript.pdf';
+        forceDownload(fileUrl, fileName);
+      } else {
+        toast.info('Downloading PDF mockup...', { icon: <FiCheckCircle style={{color:'#10B981'}}/> });
+      }
+    } else if (type === 'cert') {
+      toast.info('Downloading Certificate mockup...', { icon: <FiCheckCircle style={{color:'#10B981'}}/> });
+    }
+  };
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: currentJournal.title,
+          text: `Check out this article: ${currentJournal.title}`,
+          url: url
+        });
+      } catch (err) {
+        console.error('Error sharing', err);
+      }
+    } else {
+      copyToClipboard(url);
+    }
+  };
+
+  const handlePrintArticle = () => {
+    if (currentJournal.mainFilePath) {
+      const fileUrl = `http://localhost:5000/${currentJournal.mainFilePath.replace(/\\/g, '/')}`;
+      window.open(fileUrl, '_blank');
+      return;
+    } else {
+      toast.error('No uploaded file found to print.');
+    }
   };
 
   const cardStyle = {
@@ -72,6 +130,93 @@ const JournalDetails = () => {
     justifyContent: 'center', flexShrink: 0, border: '4px solid #fff',
     boxShadow: '0 0 0 1px #E5E7EB'
   });
+  const getDynamicMessages = () => {
+    const msgs = [];
+    
+    msgs.push({
+      sender: 'Editorial Team',
+      initials: 'EA',
+      avatarBg: '#3B82F6',
+      date: currentJournal.date || '12 May',
+      preview: 'Thank you for your submission.',
+      title: 'Submission Received',
+      body: `Dear ${currentJournal.primaryAuthorName || currentJournal.primaryAuthor || 'Author'},\n\nThank you for submitting your manuscript "${currentJournal.title || 'Untitled'}" to ${currentJournal.category || currentJournal.journalName || 'our journal'}. We have received it and it will undergo initial screening shortly.\n\nBest regards,\nEditorial Team`,
+      time: '09:00 AM'
+    });
+
+    if (['Under Review', 'Reviewed', 'Approved', 'Rejected', 'Published'].includes(currentJournal.status)) {
+      msgs.push({
+        sender: 'Editorial Team',
+        initials: 'EA',
+        avatarBg: '#3B82F6',
+        date: currentJournal.date || '14 May',
+        preview: 'Your manuscript is under review.',
+        title: 'Status Update: Under Review',
+        body: `Dear ${currentJournal.primaryAuthorName || currentJournal.primaryAuthor || 'Author'},\n\nYour manuscript "${currentJournal.title || 'Untitled'}" has passed the initial screening and is now under peer review. We will notify you once the reviews are completed.\n\nBest regards,\nEditorial Team`,
+        time: '11:30 AM'
+      });
+    }
+
+    if (['Reviewed', 'Approved', 'Rejected', 'Published'].includes(currentJournal.status)) {
+      msgs.push({
+        sender: 'Dr. Priya Verma',
+        initials: 'PV',
+        avatarBg: '#F59E0B',
+        date: currentJournal.date || '16 May',
+        preview: 'Some minor revisions suggested.',
+        title: 'Reviewer Feedback (R1)',
+        body: `Dear Author,\n\nI have reviewed your manuscript. The work is interesting, but I suggest some minor revisions to improve clarity in the methodology section.\n\nRegards,\nDr. Priya Verma`,
+        time: '02:15 PM'
+      });
+      msgs.push({
+        sender: 'Dr. Amit Kumar',
+        initials: 'AK',
+        avatarBg: '#10B981',
+        date: currentJournal.date || '18 May',
+        preview: 'Review completed and recommendation shared.',
+        title: 'Reviewer Feedback (R2)',
+        body: `Dear Author,\n\nThe paper presents a solid contribution. The results are well-supported. I recommend it for acceptance.\n\nRegards,\nDr. Amit Kumar`,
+        time: '04:45 PM'
+      });
+    }
+
+    if (currentJournal.status === 'Published') {
+      msgs.push({
+        sender: 'Editorial Team',
+        initials: 'EA',
+        avatarBg: '#3B82F6',
+        date: currentJournal.date || '20 May',
+        preview: 'Your article has been published successfully.',
+        title: 'Congratulations: Article Published',
+        body: `Dear ${currentJournal.primaryAuthorName || currentJournal.primaryAuthor || 'Author'},\n\nWe are pleased to inform you that your article "${currentJournal.title || 'Untitled'}" has been published successfully in Volume ${currentJournal.volume || 15}, Issue ${currentJournal.issue || 2} of ${currentJournal.category || currentJournal.journalName || 'OJS Journal'}.\n\nThank you for your valuable contribution.\n\nBest regards,\nEditorial Team`,
+        time: '11:20 AM'
+      });
+    } else if (currentJournal.status === 'Approved') {
+      msgs.push({
+        sender: 'Editorial Team',
+        initials: 'EA',
+        avatarBg: '#3B82F6',
+        date: currentJournal.date || '20 May',
+        preview: 'Your article has been accepted for publication.',
+        title: 'Decision: Accepted',
+        body: `Dear ${currentJournal.primaryAuthorName || currentJournal.primaryAuthor || 'Author'},\n\nWe are pleased to inform you that your article "${currentJournal.title || 'Untitled'}" has been accepted for publication. It will be published shortly.\n\nBest regards,\nEditorial Team`,
+        time: '10:00 AM'
+      });
+    } else if (currentJournal.status === 'Rejected') {
+      msgs.push({
+        sender: 'Editorial Team',
+        initials: 'EA',
+        avatarBg: '#3B82F6',
+        date: currentJournal.date || '20 May',
+        preview: 'Decision on your manuscript.',
+        title: 'Decision: Rejected',
+        body: `Dear ${currentJournal.primaryAuthorName || currentJournal.primaryAuthor || 'Author'},\n\nWe regret to inform you that your article "${currentJournal.title || 'Untitled'}" has not been accepted for publication at this time. We encourage you to submit your future work to us.\n\nBest regards,\nEditorial Team`,
+        time: '10:00 AM'
+      });
+    }
+
+    return msgs.reverse().map((m, index) => ({ ...m, id: index + 1 }));
+  };
 
   return (
     <div style={{ fontFamily: 'Inter, sans-serif', display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -106,8 +251,6 @@ const JournalDetails = () => {
               ? 'View complete details and status of your submitted journal.' 
               : activeTab === 'Review History' 
               ? 'Track the review process and editor decisions for your journal.'
-              : activeTab === 'Communication'
-              ? 'View all communications and messages related to your submission.'
               : activeTab === 'Decision'
               ? 'View and download the editorial decision letter for your submission.'
               : activeTab === 'Publication'
@@ -165,7 +308,7 @@ const JournalDetails = () => {
         <div style={{ ...cardStyle, padding: '24px', display: 'flex', gap: '20px', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', gap: '20px' }}>
             <img
-              src="https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=160&auto=format&fit=crop&q=80"
+              src={currentJournal.coverImage || currentJournal.image || `https://picsum.photos/seed/${currentJournal.id}/160/140`}
               alt="journal-pic"
               style={{ width: activeTab === 'Publication' ? '90px' : '120px', height: activeTab === 'Publication' ? '110px' : '140px', borderRadius: '10px', objectFit: 'cover', border: '1px solid #E5E7EB', flexShrink: 0 }}
             />
@@ -182,8 +325,8 @@ const JournalDetails = () => {
               </div>
               {activeTab === 'Publication' && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>
-                  <span><span style={{ fontWeight: 600, color: '#374151' }}>Journal:</span> International Journal of Computer Science (IJCS)</span>
-                  <span><span style={{ fontWeight: 600, color: '#374151' }}>DOI:</span> 10.1234/ijcs.2024.0512 <FiCopy size={12} color="#9CA3AF" style={{ cursor: 'pointer' }} onClick={() => copyToClipboard('10.1234/ijcs.2024.0512')} /></span>
+                  <span><span style={{ fontWeight: 600, color: '#374151' }}>Journal:</span> {currentJournal.category || currentJournal.journalName || 'International Journal of Computer Science (IJCS)'}</span>
+                  <span><span style={{ fontWeight: 600, color: '#374151' }}>DOI:</span> {currentJournal.doi || '10.1234/' + currentJournal.id?.toLowerCase()} <FiCopy size={12} color="#9CA3AF" style={{ cursor: 'pointer' }} onClick={() => { copyToClipboard(currentJournal.doi || '10.1234/' + currentJournal.id?.toLowerCase()); toast.success('DOI copied!'); }} /></span>
                 </div>
               )}
               {activeTab !== 'Publication' && (
@@ -192,7 +335,7 @@ const JournalDetails = () => {
                     <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '0 0 2px' }}>Submission ID</p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12.5px', fontWeight: 700, color: '#4B5563' }}>
                       {currentJournal.id}
-                      <FiCopy size={13} color="#9CA3AF" style={{ cursor: 'pointer' }} onClick={() => copyToClipboard(currentJournal.id)} />
+                      <FiCopy size={13} color="#9CA3AF" style={{ cursor: 'pointer' }} onClick={() => { copyToClipboard(currentJournal.id); toast.success('ID copied!'); }} />
                     </div>
                   </div>
                   <div>
@@ -208,78 +351,40 @@ const JournalDetails = () => {
 
           {activeTab === 'Publication' && (
             <div style={{ display: 'flex', gap: '24px', background: '#F8FAFC', padding: '16px 24px', borderRadius: '12px', border: '1px solid #F1F5F9', flexShrink: 0 }}>
-              {activeSubTab === 'Communication' ? (
-                <>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#9CA3AF', marginBottom: '4px' }}>
-                      <FiCalendar size={13} /> Current Status
-                    </div>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981' }} /> Published
-                    </p>
-                    <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '2px 0 0' }}>20 May 2024, 11:20 AM</p>
-                  </div>
-                  <div style={{ width: '1px', background: '#E5E7EB' }} />
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#9CA3AF', marginBottom: '4px' }}>
-                      <FiCalendar size={13} /> Decision Date
-                    </div>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827', margin: 0 }}>19 May 2024</p>
-                    <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '2px 0 0' }}>05:20 PM</p>
-                  </div>
-                  <div style={{ width: '1px', background: '#E5E7EB' }} />
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#9CA3AF', marginBottom: '4px' }}>
-                      <FiUser size={13} /> Editor
-                    </div>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827', margin: 0 }}>Editorial Team</p>
-                    <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '2px 0 0' }}>editor@ijcs.org</p>
-                  </div>
-                  <div style={{ width: '1px', background: '#E5E7EB' }} />
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#9CA3AF', marginBottom: '4px' }}>
-                      <FiLink size={13} /> Article DOI
-                    </div>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#2563EB', margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      10.1234/ijcs.2024.0512
-                      <FiCopy size={12} color="#9CA3AF" style={{ cursor: 'pointer' }} onClick={() => copyToClipboard('10.1234/ijcs.2024.0512')} />
-                    </p>
-                  </div>
-                </>
-              ) : activeSubTab === 'Publication Details' ? (
+              {activeSubTab === 'Publication Details' ? (
                 <>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#9CA3AF', marginBottom: '4px' }}>
                       <FiCalendar size={13} /> Published On
                     </div>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827', margin: 0 }}>20 May 2024</p>
-                    <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '2px 0 0' }}>11:20 AM</p>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827', margin: 0 }}>{currentJournal.status === 'Published' ? currentJournal.date : 'TBD'}</p>
+                    <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '2px 0 0' }}>{currentJournal.status === 'Published' ? 'Official' : 'Pending'}</p>
                   </div>
                   <div style={{ width: '1px', background: '#E5E7EB' }} />
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#9CA3AF', marginBottom: '4px' }}>
                       <FiBook size={13} /> Volume / Issue
                     </div>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827', margin: 0 }}>Volume 15, Issue 2</p>
-                    <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '2px 0 0' }}>May 2024</p>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827', margin: 0 }}>{currentJournal.volume || 'Volume 1, Issue 1'}</p>
+                    <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '2px 0 0' }}>Current</p>
                   </div>
                   <div style={{ width: '1px', background: '#E5E7EB' }} />
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#9CA3AF', marginBottom: '4px' }}>
                       <FiFileText size={13} /> Pages
                     </div>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827', margin: 0 }}>123 - 138</p>
-                    <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '2px 0 0' }}>(16 Pages)</p>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827', margin: 0 }}>{currentJournal.pages || 'TBD'}</p>
+                    <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '2px 0 0' }}>Assigned</p>
                   </div>
                   <div style={{ width: '1px', background: '#E5E7EB' }} />
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#9CA3AF', marginBottom: '4px' }}>
                       <FiActivity size={13} /> Article Status
                     </div>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#10B981', margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981' }} /> Published
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: currentJournal.status === 'Published' ? '#10B981' : '#2563EB', margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: currentJournal.status === 'Published' ? '#10B981' : '#2563EB' }} /> {currentJournal.status}
                     </p>
-                    <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '2px 0 0' }}>Online & Active</p>
+                    <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '2px 0 0' }}>{currentJournal.status === 'Published' ? 'Online & Active' : 'Processing'}</p>
                   </div>
                 </>
               ) : (
@@ -288,24 +393,24 @@ const JournalDetails = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#9CA3AF', marginBottom: '4px' }}>
                       <FiCalendar size={13} /> Published On
                     </div>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827', margin: 0 }}>20 May 2024</p>
-                    <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '2px 0 0' }}>11:20 AM</p>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827', margin: 0 }}>{currentJournal.status === 'Published' ? currentJournal.date : 'TBD'}</p>
+                    <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '2px 0 0' }}>{currentJournal.status === 'Published' ? 'Official' : 'Pending'}</p>
                   </div>
                   <div style={{ width: '1px', background: '#E5E7EB' }} />
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#9CA3AF', marginBottom: '4px' }}>
                       <FiBook size={13} /> Volume / Issue
                     </div>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827', margin: 0 }}>Volume 15, Issue 2</p>
-                    <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '2px 0 0' }}>May 2024</p>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827', margin: 0 }}>{currentJournal.volume || 'Volume 1, Issue 1'}</p>
+                    <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '2px 0 0' }}>Current</p>
                   </div>
                   <div style={{ width: '1px', background: '#E5E7EB' }} />
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#9CA3AF', marginBottom: '4px' }}>
                       <FiFileText size={13} /> Pages
                     </div>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827', margin: 0 }}>123 - 138</p>
-                    <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '2px 0 0' }}>(16 Pages)</p>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827', margin: 0 }}>{currentJournal.pages || 'TBD'}</p>
+                    <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '2px 0 0' }}>Assigned</p>
                   </div>
                 </>
               )}
@@ -321,43 +426,67 @@ const JournalDetails = () => {
               <div style={{ position: 'absolute', left: '9px', top: '10px', bottom: '10px', width: '2px', background: '#2563EB' }} />
               
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
-                <div style={{ background: '#22C55E', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
-                  <FiCheck size={11} color="#fff" />
+                <div style={{ background: currentJournal.status === 'Pending Review' ? '#2563EB' : '#22C55E', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                  {currentJournal.status === 'Pending Review' ? <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} /> : <FiCheck size={11} color="#fff" />}
                 </div>
-                <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#374151', flex: 1 }}>Submitted</span>
-                <span style={{ fontSize: '11px', color: '#9CA3AF' }}>12 May 2024, 10:30 AM</span>
+                <span style={{ fontSize: '12.5px', fontWeight: currentJournal.status === 'Pending Review' ? 700 : 600, color: currentJournal.status === 'Pending Review' ? '#2563EB' : '#374151', flex: 1 }}>Submitted</span>
+                <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{currentJournal.date}</span>
               </div>
 
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
-                <div style={{ background: '#22C55E', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
-                  <FiCheck size={11} color="#fff" />
+              {['Under Review', 'Reviewed', 'Approved', 'Rejected', 'Published'].includes(currentJournal.status) && (
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
+                  <div style={{ background: currentJournal.status === 'Under Review' ? '#2563EB' : '#22C55E', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                    {currentJournal.status === 'Under Review' ? <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} /> : <FiCheck size={11} color="#fff" />}
+                  </div>
+                  <span style={{ fontSize: '12.5px', fontWeight: currentJournal.status === 'Under Review' ? 700 : 600, color: currentJournal.status === 'Under Review' ? '#2563EB' : '#374151', flex: 1 }}>Under Review</span>
+                  <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{currentJournal.status === 'Under Review' ? currentJournal.date : ''}</span>
                 </div>
-                <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#374151', flex: 1 }}>Under Review</span>
-                <span style={{ fontSize: '11px', color: '#9CA3AF' }}>14 May 2024, 02:15 PM</span>
-              </div>
+              )}
 
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
-                <div style={{ background: '#22C55E', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
-                  <FiCheck size={11} color="#fff" />
+              {['Reviewed', 'Approved', 'Rejected', 'Published'].includes(currentJournal.status) && (
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
+                  <div style={{ background: currentJournal.status === 'Reviewed' ? '#2563EB' : '#22C55E', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                    {currentJournal.status === 'Reviewed' ? <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} /> : <FiCheck size={11} color="#fff" />}
+                  </div>
+                  <span style={{ fontSize: '12.5px', fontWeight: currentJournal.status === 'Reviewed' ? 700 : 600, color: currentJournal.status === 'Reviewed' ? '#2563EB' : '#374151', flex: 1 }}>Review Completed</span>
+                  <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{currentJournal.status === 'Reviewed' ? currentJournal.date : ''}</span>
                 </div>
-                <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#374151', flex: 1 }}>Review Completed</span>
-                <span style={{ fontSize: '11px', color: '#9CA3AF' }}>18 May 2024, 03:45 PM</span>
-              </div>
+              )}
 
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
-                <div style={{ background: '#2563EB', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
-                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} />
+              {['Approved', 'Rejected'].includes(currentJournal.status) && (
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
+                  <div style={{ background: currentJournal.status === 'Rejected' ? '#EF4444' : '#2563EB', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} />
+                  </div>
+                  <span style={{ fontSize: '12.5px', fontWeight: 700, color: currentJournal.status === 'Rejected' ? '#EF4444' : '#2563EB', flex: 1 }}>Decision: {currentJournal.status}</span>
+                  <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{currentJournal.date}</span>
                 </div>
-                <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#2563EB', flex: 1 }}>Published</span>
-                <span style={{ fontSize: '11px', color: '#9CA3AF' }}>20 May 2024, 11:20 AM</span>
-              </div>
+              )}
+
+              {currentJournal.status === 'Published' && (
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
+                  <div style={{ background: '#2563EB', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} />
+                  </div>
+                  <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#2563EB', flex: 1 }}>Published</span>
+                  <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{currentJournal.date}</span>
+                </div>
+              )}
             </div>
             
-            <div style={{ borderRadius: '8px', border: '1px solid #BBF7D0', background: '#F0FDF4', padding: '8px 12px', marginTop: '6px' }}>
-              <p style={{ fontSize: '11.5px', color: '#166534', margin: 0, lineHeight: 1.5 }}>
-                Your journal has been published successfully. <br/>You can view or download your published article.
-              </p>
-            </div>
+            {currentJournal.status === 'Published' ? (
+              <div style={{ borderRadius: '8px', border: '1px solid #BBF7D0', background: '#F0FDF4', padding: '8px 12px', marginTop: '6px' }}>
+                <p style={{ fontSize: '11.5px', color: '#166534', margin: 0, lineHeight: 1.5 }}>
+                  Your journal has been published successfully. <br/>You can view or download your published article.
+                </p>
+              </div>
+            ) : (
+              <div style={{ borderRadius: '8px', border: '1px solid #BFDBFE', background: '#EFF6FF', padding: '8px 12px', marginTop: '6px' }}>
+                <p style={{ fontSize: '11.5px', color: '#1E40AF', margin: 0, lineHeight: 1.5 }}>
+                  Current Status: {currentJournal.status}. <br/>We will notify you once there's an update.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -372,7 +501,7 @@ const JournalDetails = () => {
             </div>
             <div>
               <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '0 0 2px' }}>Research Area</p>
-              <p style={{ fontSize: '12px', fontWeight: 700, color: '#374151', margin: 0 }}>CS / AI</p>
+              <p style={{ fontSize: '12px', fontWeight: 700, color: '#374151', margin: 0 }}>{currentJournal.category || 'N/A'}</p>
             </div>
           </div>
           <div style={{ ...cardStyle, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -381,7 +510,7 @@ const JournalDetails = () => {
             </div>
             <div>
               <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '0 0 2px' }}>Files Submitted</p>
-              <p style={{ fontSize: '12px', fontWeight: 700, color: '#374151', margin: 0 }}>4 Files</p>
+              <p style={{ fontSize: '12px', fontWeight: 700, color: '#374151', margin: 0 }}>{currentJournal.files ? currentJournal.files.length + ' Files' : '1 File'}</p>
             </div>
           </div>
           <div style={{ ...cardStyle, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -390,7 +519,7 @@ const JournalDetails = () => {
             </div>
             <div>
               <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '0 0 2px' }}>Total Pages</p>
-              <p style={{ fontSize: '12px', fontWeight: 700, color: '#374151', margin: 0 }}>12 Pages</p>
+              <p style={{ fontSize: '12px', fontWeight: 700, color: '#374151', margin: 0 }}>{currentJournal.pages ? `${currentJournal.pages} Pages` : 'N/A'}</p>
             </div>
           </div>
           <div style={{ ...cardStyle, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -399,7 +528,7 @@ const JournalDetails = () => {
             </div>
             <div>
               <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '0 0 2px' }}>Last Updated</p>
-              <p style={{ fontSize: '12px', fontWeight: 700, color: '#374151', margin: 0 }}>20 May 2024, 11:20 AM</p>
+              <p style={{ fontSize: '12px', fontWeight: 700, color: '#374151', margin: 0 }}>{currentJournal.date}</p>
             </div>
           </div>
         </div>
@@ -410,8 +539,7 @@ const JournalDetails = () => {
         <span onClick={() => setActiveTab('Summary')} style={tabItemStyle('Summary')}>Summary</span>
         <span onClick={() => navigate('/dashboard/journal-files')} style={tabItemStyle('Files')}>Files</span>
         <span onClick={() => setActiveTab('Review History')} style={tabItemStyle('Review History')}>Review History</span>
-        <span onClick={() => setActiveTab('Communication')} style={tabItemStyle('Communication')}>Communication</span>
-        <span onClick={() => setActiveTab('Decision')} style={tabItemStyle('Decision')}>Decision Letter</span>
+        {/* <span onClick={() => setActiveTab('Decision')} style={tabItemStyle('Decision')}>Decision Letter</span> */}
         <span onClick={() => setActiveTab('Publication')} style={tabItemStyle('Publication')}>Publication</span>
       </div>
 
@@ -425,21 +553,27 @@ const JournalDetails = () => {
           <div style={{ ...cardStyle, padding: '24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <h4 style={{ fontSize: '14.5px', fontWeight: 700, color: '#111827', margin: 0, fontFamily: 'Poppins, sans-serif' }}>Abstract</h4>
             <p style={{ fontSize: '13px', color: '#4B5563', lineHeight: 1.6, margin: 0 }}>
-              This paper presents a novel approach to leveraging artificial intelligence techniques to improve healthcare outcomes. We propose a framework that integrates machine learning models with real-time patient data to assist in early diagnosis, treatment planning, and outcome prediction. Experimental results demonstrate the effectiveness of our approach in improving accuracy and efficiency in healthcare systems.
+              {currentJournal.abstract || 'No abstract available for this journal.'}
             </p>
             <div style={{ marginTop: '8px' }}>
               <h5 style={{ fontSize: '12.5px', fontWeight: 700, color: '#374151', marginBottom: '8px' }}>Keywords</h5>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {['Artificial Intelligence', 'Healthcare', 'Machine Learning', 'Deep Learning', 'Diagnosis', 'Predictive Analytics'].map(kw => (
+                {(currentJournal.keywords && currentJournal.keywords.length > 0 ? currentJournal.keywords : ['Research', 'Journal']).map(kw => (
                   <span key={kw} style={{ background: '#EFF6FF', color: '#2563EB', padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 600 }}>{kw}</span>
                 ))}
               </div>
             </div>
             <div style={{ display: 'flex', gap: '10px', marginTop: '14px' }}>
-              <button style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fff', border: '1.5px solid #E5E7EB', color: '#4B5563', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+              <button onClick={() => handleDownload('pdf')} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fff', border: '1.5px solid #E5E7EB', color: '#4B5563', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
                 <FiDownload size={14} /> Download Published Article (PDF)
               </button>
-              <button style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#2563EB', border: 'none', color: '#fff', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+              <button onClick={() => {
+                if (currentJournal.mainFilePath) {
+                  window.open(`http://localhost:5000/${currentJournal.mainFilePath.replace(/\\/g, '/')}`, '_blank');
+                } else {
+                  toast.error('Article file not found');
+                }
+              }} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#2563EB', border: 'none', color: '#fff', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
                 View Published Article <FiExternalLink size={14} />
               </button>
             </div>
@@ -450,45 +584,45 @@ const JournalDetails = () => {
             <h4 style={{ fontSize: '14.5px', fontWeight: 700, color: '#111827', margin: '0 0 16px', fontFamily: 'Poppins, sans-serif' }}>Details</h4>
             <div>
               <p style={detailLabelStyle}>Journal Title</p>
-              <p style={detailValStyle}>A Novel Approach to AI in Healthcare</p>
+              <p style={detailValStyle}>{currentJournal.title || 'Untitled'}</p>
               
               <p style={detailLabelStyle}>Corresponding Author</p>
-              <p style={detailValStyle}>Dr. Rahul Sharma</p>
+              <p style={detailValStyle}>{currentJournal.primaryAuthorName || currentJournal.primaryAuthorId?.name || currentJournal.primaryAuthor || 'Unknown Author'}</p>
 
               <p style={detailLabelStyle}>Co-authors</p>
-              <p style={detailValStyle}>Dr. Priya Verma, Dr. Amit Kumar</p>
+              <p style={detailValStyle}>{currentJournal.coAuthors?.length > 0 ? currentJournal.coAuthors.join(', ') : 'None'}</p>
 
               <p style={detailLabelStyle}>Journal/Conference</p>
-              <p style={detailValStyle}>International Journal of Computer Science (IJCS)</p>
+              <p style={detailValStyle}>{currentJournal.category || currentJournal.journalName || 'OJS Journal'}</p>
 
               <p style={detailLabelStyle}>DOI</p>
               <p style={{ ...detailValStyle, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                10.1234/ijcs.2024.0512
-                <FiCopy size={12} color="#9CA3AF" style={{ cursor: 'pointer' }} onClick={() => copyToClipboard('10.1234/ijcs.2024.0512')} />
+                {currentJournal.doi || `10.1234/${currentJournal.id?.toLowerCase()}`}
+                <FiCopy size={12} color="#9CA3AF" style={{ cursor: 'pointer' }} onClick={() => copyToClipboard(currentJournal.doi || `10.1234/${currentJournal.id?.toLowerCase()}`)} />
               </p>
 
               <p style={detailLabelStyle}>Publisher</p>
-              <p style={{ ...detailValStyle, marginBottom: 0 }}>IJCS Publications</p>
+              <p style={{ ...detailValStyle, marginBottom: 0 }}>{currentJournal.publisher || 'OJS Publications'}</p>
             </div>
           </div>
 
           {/* Actions Box */}
           <div style={{ ...cardStyle, padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#111827', margin: '0 0 6px', fontFamily: 'Poppins, sans-serif' }}>Actions</h4>
-            <button style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
-              <FiEye size={14} color="#2563EB" /> View Full Details
+            <button onClick={() => setShowArticleModal(true)} style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
+              <FiEye size={14} color="#2563EB" /> View Full Article
             </button>
-            <button style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
-              <FiDownload size={14} color="#2563EB" /> Download All Files
+            <button onClick={() => handleDownload('pdf')} style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
+              <FiDownload size={14} color="#2563EB" /> Download Article
             </button>
-            <button style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
-              <FiFileText size={14} color="#2563EB" /> Download Decision Letter
+            <button onClick={() => handleDownload('cert')} style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
+              <FiAward size={14} color="#2563EB" /> Download Certificate
             </button>
-            <button style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
-              <FiShare2 size={14} color="#2563EB" /> Share Journal
+            <button onClick={handleShare} style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
+              <FiShare2 size={14} color="#2563EB" /> Share Article
             </button>
-            <button style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
-              <FiPrinter size={14} color="#2563EB" /> Print Details
+            <button onClick={handlePrintArticle} style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
+              <FiPrinter size={14} color="#2563EB" /> Print Article
             </button>
           </div>
 
@@ -504,94 +638,108 @@ const JournalDetails = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', position: 'relative' }}>
               <div style={{ position: 'absolute', left: '17px', top: '24px', bottom: '24px', width: '2px', background: '#E5E7EB', zIndex: 0 }} />
 
+              {/* Submitted Step - Always Visible */}
               <div style={{ display: 'flex', gap: '16px', position: 'relative', zIndex: 1 }}>
-                <div style={timelineIconStyle('#2563EB', '#EFF6FF')}>
-                  <FiSend size={16} />
+                <div style={timelineIconStyle(currentJournal.status === 'Pending Review' ? '#2563EB' : '#22C55E', currentJournal.status === 'Pending Review' ? '#EFF6FF' : '#DCFCE7')}>
+                  {currentJournal.status === 'Pending Review' ? <FiSend size={16} /> : <FiCheck size={14} />}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#111827', margin: 0 }}>Submitted to Journal</h4>
-                    <span style={{ fontSize: '11.5px', color: '#9CA3AF' }}>12 May 2024, 10:30 AM</span>
+                    <span style={{ fontSize: '11.5px', color: '#9CA3AF' }}>{currentJournal.date}</span>
                   </div>
                   <p style={{ fontSize: '12.5px', color: '#6B7280', margin: 0, lineHeight: 1.5 }}>Your manuscript has been successfully submitted to the journal.</p>
                   <span style={{ fontSize: '11.5px', color: '#9CA3AF', fontWeight: 500 }}>by Author</span>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '16px', position: 'relative', zIndex: 1 }}>
-                <div style={timelineIconStyle('#D97706', '#FEF3C7')}>
-                  <FiUser size={15} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#111827', margin: 0 }}>Under Review</h4>
-                    <span style={{ fontSize: '11.5px', color: '#9CA3AF' }}>14 May 2024, 02:15 PM</span>
+              {/* Under Review Step */}
+              {['Under Review', 'Reviewed', 'Approved', 'Rejected', 'Published'].includes(currentJournal.status) && (
+                <div style={{ display: 'flex', gap: '16px', position: 'relative', zIndex: 1 }}>
+                  <div style={timelineIconStyle(currentJournal.status === 'Under Review' ? '#D97706' : '#22C55E', currentJournal.status === 'Under Review' ? '#FEF3C7' : '#DCFCE7')}>
+                    {currentJournal.status === 'Under Review' ? <FiUser size={15} /> : <FiCheck size={14} />}
                   </div>
-                  <p style={{ fontSize: '12.5px', color: '#6B7280', margin: 0, lineHeight: 1.5 }}>The manuscript has been assigned to reviewers.</p>
-                  <span style={{ fontSize: '11.5px', color: '#9CA3AF', fontWeight: 500 }}>by Editorial Team</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#111827', margin: 0 }}>Under Review</h4>
+                      <span style={{ fontSize: '11.5px', color: '#9CA3AF' }}>{currentJournal.status === 'Under Review' ? currentJournal.date : ''}</span>
+                    </div>
+                    <p style={{ fontSize: '12.5px', color: '#6B7280', margin: 0, lineHeight: 1.5 }}>The manuscript has been assigned to reviewers.</p>
+                    <span style={{ fontSize: '11.5px', color: '#9CA3AF', fontWeight: 500 }}>by Editorial Team</span>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div style={{ display: 'flex', gap: '16px', position: 'relative', zIndex: 1 }}>
-                <div style={timelineIconStyle('#9333EA', '#F3E8FF')}>
-                  <FiUsers size={14} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#111827', margin: 0 }}>Review Completed</h4>
-                    <span style={{ fontSize: '11.5px', color: '#9CA3AF' }}>18 May 2024, 03:45 PM</span>
+              {/* Review Completed Step */}
+              {['Reviewed', 'Approved', 'Rejected', 'Published'].includes(currentJournal.status) && (
+                <div style={{ display: 'flex', gap: '16px', position: 'relative', zIndex: 1 }}>
+                  <div style={timelineIconStyle(currentJournal.status === 'Reviewed' ? '#9333EA' : '#22C55E', currentJournal.status === 'Reviewed' ? '#F3E8FF' : '#DCFCE7')}>
+                    {currentJournal.status === 'Reviewed' ? <FiUsers size={14} /> : <FiCheck size={14} />}
                   </div>
-                  <p style={{ fontSize: '12.5px', color: '#6B7280', margin: 0, lineHeight: 1.5 }}>Both reviewers have submitted their reviews.</p>
-                  <span style={{ fontSize: '11.5px', color: '#9CA3AF', fontWeight: 500 }}>by Reviewers</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#111827', margin: 0 }}>Review Completed</h4>
+                      <span style={{ fontSize: '11.5px', color: '#9CA3AF' }}>{currentJournal.status === 'Reviewed' ? currentJournal.date : ''}</span>
+                    </div>
+                    <p style={{ fontSize: '12.5px', color: '#6B7280', margin: 0, lineHeight: 1.5 }}>Both reviewers have submitted their reviews.</p>
+                    <span style={{ fontSize: '11.5px', color: '#9CA3AF', fontWeight: 500 }}>by Reviewers</span>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div style={{ display: 'flex', gap: '16px', position: 'relative', zIndex: 1 }}>
-                <div style={timelineIconStyle('#0284C7', '#E0F2FE')}>
-                  <FiFileText size={15} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#111827', margin: 0 }}>Editor Decision</h4>
-                    <span style={{ fontSize: '11.5px', color: '#9CA3AF' }}>19 May 2024, 05:20 PM</span>
+              {/* Editor Decision Step */}
+              {['Approved', 'Rejected', 'Published'].includes(currentJournal.status) && (
+                <div style={{ display: 'flex', gap: '16px', position: 'relative', zIndex: 1 }}>
+                  <div style={timelineIconStyle(['Approved', 'Rejected'].includes(currentJournal.status) ? (currentJournal.status === 'Rejected' ? '#EF4444' : '#0284C7') : '#22C55E', ['Approved', 'Rejected'].includes(currentJournal.status) ? (currentJournal.status === 'Rejected' ? '#FEE2E2' : '#E0F2FE') : '#DCFCE7')}>
+                    {['Approved', 'Rejected'].includes(currentJournal.status) ? <FiFileText size={15} /> : <FiCheck size={14} />}
                   </div>
-                  <p style={{ fontSize: '12.5px', color: '#6B7280', margin: 0, lineHeight: 1.5 }}>The editor has made a decision based on reviewer comments.</p>
-                  <span style={{ fontSize: '11.5px', color: '#9CA3AF', fontWeight: 500 }}>by Handling Editor</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#111827', margin: 0 }}>Editor Decision: {currentJournal.status}</h4>
+                      <span style={{ fontSize: '11.5px', color: '#9CA3AF' }}>{['Approved', 'Rejected'].includes(currentJournal.status) ? currentJournal.date : ''}</span>
+                    </div>
+                    <p style={{ fontSize: '12.5px', color: '#6B7280', margin: 0, lineHeight: 1.5 }}>The editor has made a decision based on reviewer comments.</p>
+                    <span style={{ fontSize: '11.5px', color: '#9CA3AF', fontWeight: 500 }}>by Handling Editor</span>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div style={{ display: 'flex', gap: '16px', position: 'relative', zIndex: 1 }}>
-                <div style={timelineIconStyle('#16A34A', '#DCFCE7')}>
-                  <FiBookOpen size={14} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#16A34A', margin: 0 }}>Published</h4>
-                    <span style={{ fontSize: '11.5px', color: '#9CA3AF' }}>20 May 2024, 11:20 AM</span>
+              {/* Published Step */}
+              {currentJournal.status === 'Published' && (
+                <div style={{ display: 'flex', gap: '16px', position: 'relative', zIndex: 1 }}>
+                  <div style={timelineIconStyle('#16A34A', '#DCFCE7')}>
+                    <FiBookOpen size={14} />
                   </div>
-                  <p style={{ fontSize: '12.5px', color: '#6B7280', margin: 0, lineHeight: 1.5 }}>Your article has been published successfully.</p>
-                  <span style={{ fontSize: '11.5px', color: '#9CA3AF', fontWeight: 500 }}>by Editorial Team</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#16A34A', margin: 0 }}>Published</h4>
+                      <span style={{ fontSize: '11.5px', color: '#9CA3AF' }}>{currentJournal.date}</span>
+                    </div>
+                    <p style={{ fontSize: '12.5px', color: '#6B7280', margin: 0, lineHeight: 1.5 }}>Your article has been published successfully.</p>
+                    <span style={{ fontSize: '11.5px', color: '#9CA3AF', fontWeight: 500 }}>by Editorial Team</span>
+                  </div>
                 </div>
-              </div>
+              )}
 
             </div>
 
             {/* Success green alert at bottom of timeline */}
-            <div style={{ borderRadius: '12px', border: '1px solid #BBF7D0', background: '#F0FDF4', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px', flexWrap: 'wrap', gap: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ background: '#22C55E', borderRadius: '50%', padding: '5px', display: 'flex' }}>
-                  <FiCheck size={14} color="#fff" />
+            {currentJournal.status === 'Published' && (
+              <div style={{ borderRadius: '12px', border: '1px solid #BBF7D0', background: '#F0FDF4', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ background: '#22C55E', borderRadius: '50%', padding: '5px', display: 'flex' }}>
+                    <FiCheck size={14} color="#fff" />
+                  </div>
+                  <div>
+                    <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: '#14532D', margin: '0 0 2px' }}>Your article is now published and available online.</h4>
+                    <p style={{ fontSize: '12px', color: '#15803D', margin: 0 }}>Thank you for contributing to the research community.</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: '#14532D', margin: '0 0 2px' }}>Your article is now published and available online.</h4>
-                  <p style={{ fontSize: '12px', color: '#15803D', margin: 0 }}>Thank you for contributing to the research community.</p>
-                </div>
+                <button onClick={() => window.open(`https://doi.org/${currentJournal.doi || '10.1234/' + currentJournal.id?.toLowerCase()}`, '_blank')} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fff', border: '1px solid #86EFAC', color: '#166534', padding: '8px 16px', borderRadius: '8px', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}>
+                  View Published Article <FiExternalLink size={13} />
+                </button>
               </div>
-              <button style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fff', border: '1px solid #86EFAC', color: '#166534', padding: '8px 16px', borderRadius: '8px', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}>
-                View Published Article <FiExternalLink size={13} />
-              </button>
-            </div>
-
+            )}
           </div>
 
           {/* Right Column (Reviewers & Details) */}
@@ -600,297 +748,104 @@ const JournalDetails = () => {
             {/* Reviewers */}
             <div style={{ ...cardStyle, padding: '20px 22px' }}>
               <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#111827', fontFamily: 'Poppins, sans-serif', margin: '0 0 16px' }}>Reviewers</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <img
-                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
-                    alt="rev-pic-1"
-                    style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
-                  />
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#111827' }}>Dr. Amit Kumar</span>
-                    <span style={{ fontSize: '11px', color: '#6B7280' }}>amk@jics.org</span>
+              {['Published', 'Reviewed', 'Approved'].includes(currentJournal.status) ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <div style={{ background: '#E0F2FE', color: '#0369A1', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '14px' }}>R1</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#111827' }}>Reviewer 1</span>
+                      <span style={{ fontSize: '11px', color: '#6B7280' }}>Blind Peer Review</span>
+                    </div>
+                    <span style={{ background: '#DCFCE7', color: '#15803D', padding: '3px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }}>Completed</span>
                   </div>
-                  <span style={{ background: '#DCFCE7', color: '#15803D', padding: '3px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }}>Completed</span>
-                </div>
 
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <img
-                    src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80"
-                    alt="rev-pic-2"
-                    style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
-                  />
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#111827' }}>Dr. Priya Verma</span>
-                    <span style={{ fontSize: '11px', color: '#6B7280' }}>priya.verma@jics.org</span>
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <div style={{ background: '#F3E8FF', color: '#7E22CE', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '14px' }}>R2</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#111827' }}>Reviewer 2</span>
+                      <span style={{ fontSize: '11px', color: '#6B7280' }}>Blind Peer Review</span>
+                    </div>
+                    <span style={{ background: '#DCFCE7', color: '#15803D', padding: '3px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }}>Completed</span>
                   </div>
-                  <span style={{ background: '#DCFCE7', color: '#15803D', padding: '3px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }}>Completed</span>
                 </div>
-              </div>
+              ) : (
+                <p style={{ fontSize: '12.5px', color: '#6B7280', margin: 0 }}>Reviewers will be assigned once the journal enters the review phase.</p>
+              )}
             </div>
 
             {/* Review Details */}
             <div style={{ ...cardStyle, padding: '20px 22px' }}>
               <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#111827', fontFamily: 'Poppins, sans-serif', margin: '0 0 16px' }}>Review Details</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Round</span>
-                  <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#111827' }}>1</span>
+              {['Published', 'Reviewed', 'Approved'].includes(currentJournal.status) ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Round</span>
+                    <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#111827' }}>1</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Reviewers Invited</span>
+                    <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#111827' }}>2</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Reviews Submitted</span>
+                    <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#111827' }}>2</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Average Rating</span>
+                    <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#D97706', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      ★★★★★ <span style={{ color: '#111827' }}>4.5 / 5</span>
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Recommendation</span>
+                    <span style={{ background: '#DCFCE7', color: '#15803D', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700 }}>Accept</span>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Reviewers Invited</span>
-                  <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#111827' }}>2</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Reviews Submitted</span>
-                  <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#111827' }}>2</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Average Rating</span>
-                  <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#D97706', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    ★★★★★ <span style={{ color: '#111827' }}>4.5 / 5</span>
-                  </span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Recommendation</span>
-                  <span style={{ background: '#DCFCE7', color: '#15803D', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700 }}>Accept</span>
-                </div>
-              </div>
+              ) : (
+                <p style={{ fontSize: '12.5px', color: '#6B7280', margin: 0 }}>Review process is pending or ongoing.</p>
+              )}
             </div>
 
             {/* Actions */}
             <div style={{ ...cardStyle, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: '#111827', margin: '0 0 6px', fontFamily: 'Poppins, sans-serif' }}>Actions</h4>
-              <button style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
-                <FiEye size={14} color="#2563EB" /> View All Reviews
-              </button>
-              <button style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
-                <FiDownload size={14} color="#2563EB" /> Download Reviews
-              </button>
-              <button style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
-                <FiFileText size={14} color="#2563EB" /> View Decision Letter
-              </button>
-            </div>
-
-          </div>
-
-        </div>
-      )}
-
-      {/* COMMUNICATION TAB */}
-      {activeTab === 'Communication' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '280px 1.4fr 1fr', gap: '16px', alignItems: 'start' }}>
-          
-          {/* Left Column: Conversations list */}
-          <div style={{ ...cardStyle, padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '14.5px', fontWeight: 700, color: '#111827', margin: 0, fontFamily: 'Poppins, sans-serif' }}>Conversations</h3>
-              <button style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#2563EB', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '8px', fontSize: '11.5px', fontWeight: 600, cursor: 'pointer' }}>
-                <FiPlus size={12} /> New Message
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '360px', overflowY: 'auto' }}>
-              <div 
-                onClick={() => setActiveMessage(1)} 
-                style={{ 
-                  display: 'flex', gap: '10px', padding: '10px 12px', borderRadius: '10px', 
-                  background: activeMessage === 1 ? '#EFF6FF' : '#fff', 
-                  border: `1px solid ${activeMessage === 1 ? '#BFDBFE' : '#F3F4F6'}`,
-                  cursor: 'pointer', transition: 'all 0.15s', position: 'relative'
-                }}
-              >
-                <div style={{ background: '#3B82F6', color: '#fff', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '11.5px', flexShrink: 0 }}>
-                  EA
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flex: 1, overflow: 'hidden' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#111827' }}>Editorial Team</span>
-                    <span style={{ fontSize: '10px', color: '#9CA3AF' }}>20 May</span>
-                  </div>
-                  <span style={{ fontSize: '11.5px', color: '#6B7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    Your article has been published successfully.
-                  </span>
-                </div>
-                <div style={{ position: 'absolute', right: '6px', top: '18px', width: '6px', height: '6px', borderRadius: '50%', background: '#2563EB' }} />
-              </div>
-
-              <div 
-                onClick={() => setActiveMessage(2)} 
-                style={{ 
-                  display: 'flex', gap: '10px', padding: '10px 12px', borderRadius: '10px', 
-                  background: activeMessage === 2 ? '#EFF6FF' : '#fff', 
-                  border: `1px solid ${activeMessage === 2 ? '#BFDBFE' : '#F3F4F6'}`,
-                  cursor: 'pointer', transition: 'all 0.15s', position: 'relative'
-                }}
-              >
-                <div style={{ background: '#10B981', color: '#fff', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '11.5px', flexShrink: 0 }}>
-                  AK
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flex: 1, overflow: 'hidden' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#111827' }}>Dr. Amit Kumar</span>
-                    <span style={{ fontSize: '10px', color: '#9CA3AF' }}>18 May</span>
-                  </div>
-                  <span style={{ fontSize: '11.5px', color: '#6B7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    Review completed and recommendation shared.
-                  </span>
-                </div>
-                <div style={{ position: 'absolute', right: '6px', top: '18px', width: '6px', height: '6px', borderRadius: '50%', background: '#2563EB' }} />
-              </div>
-
-              <div 
-                onClick={() => setActiveMessage(3)} 
-                style={{ 
-                  display: 'flex', gap: '10px', padding: '10px 12px', borderRadius: '10px', 
-                  background: activeMessage === 3 ? '#EFF6FF' : '#fff', 
-                  border: `1px solid ${activeMessage === 3 ? '#BFDBFE' : '#F3F4F6'}`,
-                  cursor: 'pointer', transition: 'all 0.15s'
-                }}
-              >
-                <div style={{ background: '#F59E0B', color: '#fff', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '11.5px', flexShrink: 0 }}>
-                  PV
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flex: 1, overflow: 'hidden' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#111827' }}>Dr. Priya Verma</span>
-                    <span style={{ fontSize: '10px', color: '#9CA3AF' }}>16 May</span>
-                  </div>
-                  <span style={{ fontSize: '11.5px', color: '#6B7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    Some minor revisions suggested.
-                  </span>
-                </div>
-              </div>
-
-              <div 
-                onClick={() => setActiveMessage(4)} 
-                style={{ 
-                  display: 'flex', gap: '10px', padding: '10px 12px', borderRadius: '10px', 
-                  background: activeMessage === 4 ? '#EFF6FF' : '#fff', 
-                  border: `1px solid ${activeMessage === 4 ? '#BFDBFE' : '#F3F4F6'}`,
-                  cursor: 'pointer', transition: 'all 0.15s'
-                }}
-              >
-                <div style={{ background: '#3B82F6', color: '#fff', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '11.5px', flexShrink: 0 }}>
-                  EA
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flex: 1, overflow: 'hidden' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#111827' }}>Editorial Team</span>
-                    <span style={{ fontSize: '10px', color: '#9CA3AF' }}>14 May</span>
-                  </div>
-                  <span style={{ fontSize: '11.5px', color: '#6B7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    Your manuscript is under review.
-                  </span>
-                </div>
-              </div>
-
-              <div 
-                onClick={() => setActiveMessage(5)} 
-                style={{ 
-                  display: 'flex', gap: '10px', padding: '10px 12px', borderRadius: '10px', 
-                  background: activeMessage === 5 ? '#EFF6FF' : '#fff', 
-                  border: `1px solid ${activeMessage === 5 ? '#BFDBFE' : '#F3F4F6'}`,
-                  cursor: 'pointer', transition: 'all 0.15s'
-                }}
-              >
-                <div style={{ background: '#3B82F6', color: '#fff', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '11.5px', flexShrink: 0 }}>
-                  EA
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flex: 1, overflow: 'hidden' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#111827' }}>Editorial Team</span>
-                    <span style={{ fontSize: '10px', color: '#9CA3AF' }}>12 May</span>
-                  </div>
-                  <span style={{ fontSize: '11.5px', color: '#6B7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    Thank you for your submission.
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Middle Column: Chat details */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            
-            {/* Message Area */}
-            <div style={{ ...cardStyle, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '14px', minHeight: '320px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F3F4F6', paddingBottom: '12px' }}>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                  <div style={{ background: '#3B82F6', color: '#fff', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '13px' }}>
-                    EA
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#111827' }}>Editorial Team</span>
-                    <span style={{ fontSize: '11px', color: '#6B7280' }}>editorial@ijcs.org</span>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: 'auto' }}>
-                  <span style={{ fontSize: '11px', color: '#9CA3AF' }}>20 May 2024, 11:20 AM</span>
-                  <FiMoreVertical size={16} color="#9CA3AF" style={{ cursor: 'pointer' }} />
-                </div>
-              </div>
-
-              {/* Message Content */}
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', flex: 1, marginTop: '8px' }}>
-                <div style={{ background: '#3B82F6', color: '#fff', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '10.5px', flexShrink: 0 }}>
-                  EA
-                </div>
-                <div style={{ background: '#F0F5FF', border: '1px solid #DCE6FF', padding: '16px', borderRadius: '0 12px 12px 12px', flex: 1 }}>
-                  <p style={{ fontSize: '12.5px', color: '#1E293B', fontWeight: 600, margin: '0 0 10px' }}>Dear Dr. Rahul Sharma,</p>
-                  <p style={{ fontSize: '12.5px', color: '#334155', lineHeight: 1.6, margin: '0 0 10px' }}>
-                    We are pleased to inform you that your article "A Novel Approach to AI in Healthcare" has been published successfully in Volume 15, Issue 2 (May 2024) of International Journal of Computer Science (IJCS).
-                  </p>
-                  <p style={{ fontSize: '12.5px', color: '#334155', lineHeight: 1.6, margin: '0 0 12px' }}>
-                    Thank you for your valuable contribution.
-                  </p>
-                  <p style={{ fontSize: '12.5px', color: '#1E293B', fontWeight: 600, margin: '0 0 2px' }}>Best regards,</p>
-                  <p style={{ fontSize: '12.5px', color: '#1E293B', fontWeight: 600, margin: 0 }}>Editorial Team</p>
-                  <p style={{ fontSize: '10px', color: '#9CA3AF', textAlign: 'right', margin: '8px 0 0' }}>11:20 AM</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Input Box */}
-            <div style={{ ...cardStyle, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <textarea placeholder="Type your message here..." rows="2" style={{ width: '100%', border: 'none', outline: 'none', fontSize: '13px', color: '#111827', resize: 'none', fontFamily: 'inherit' }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #F3F4F6', paddingTop: '10px' }}>
-                <div style={{ display: 'flex', gap: '12px', color: '#9CA3AF' }}>
-                  <FiPaperclip size={16} style={{ cursor: 'pointer' }} />
-                  <FiSmile size={16} style={{ cursor: 'pointer' }} />
-                </div>
-                <button style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#F3F4F6', border: 'none', color: '#9CA3AF', padding: '8px 16px', borderRadius: '8px', fontSize: '12.5px', fontWeight: 600, cursor: 'not-allowed' }}>
-                  <FiSend size={13} /> Send Message
-                </button>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Right Column: Sidebar summaries */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            
-            {/* Communication Summary */}
-            <div style={{ ...cardStyle, padding: '20px 22px' }}>
-              <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#111827', fontFamily: 'Poppins, sans-serif', margin: '0 0 16px' }}>Communication Summary</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Total Messages</span>
-                  <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#111827' }}>5</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Unread Messages</span>
-                  <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#111827' }}>0</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Last Message</span>
-                  <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#111827' }}>20 May 2024</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Participants</span>
-                  <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#111827' }}>3</span>
-                </div>
-              </div>
+              
+              {(() => {
+                const hasReviews = ['Published', 'Reviewed', 'Approved', 'Rejected'].includes(currentJournal.status);
+                const hasDecision = ['Published', 'Approved', 'Rejected'].includes(currentJournal.status);
+                
+                return (
+                  <>
+                    <button 
+                      onClick={() => hasReviews ? toast.success('Opening Review Reports...') : toast.info('No reviews available yet.')} 
+                      style={{ ...actionBtnStyle, opacity: hasReviews ? 1 : 0.6, cursor: hasReviews ? 'pointer' : 'not-allowed', background: hasReviews ? '#fff' : '#F9FAFB' }}
+                      onMouseEnter={e => hasReviews && (e.currentTarget.style.borderColor = '#2563EB')} 
+                      onMouseLeave={e => hasReviews && (e.currentTarget.style.borderColor = '#E5E7EB')}
+                    >
+                      <FiEye size={14} color={hasReviews ? "#2563EB" : "#9CA3AF"} /> 
+                      <span style={{ color: hasReviews ? '#374151' : '#9CA3AF' }}>View All Reviews</span>
+                    </button>
+                    <button 
+                      onClick={() => hasReviews ? toast.success('Downloading Reviews PDF...') : toast.error('Cannot download reviews yet.')} 
+                      style={{ ...actionBtnStyle, opacity: hasReviews ? 1 : 0.6, cursor: hasReviews ? 'pointer' : 'not-allowed', background: hasReviews ? '#fff' : '#F9FAFB' }}
+                      onMouseEnter={e => hasReviews && (e.currentTarget.style.borderColor = '#2563EB')} 
+                      onMouseLeave={e => hasReviews && (e.currentTarget.style.borderColor = '#E5E7EB')}
+                    >
+                      <FiDownload size={14} color={hasReviews ? "#2563EB" : "#9CA3AF"} /> 
+                      <span style={{ color: hasReviews ? '#374151' : '#9CA3AF' }}>Download Reviews</span>
+                    </button>
+                    <button 
+                      onClick={() => hasDecision ? toast.success('Opening Official Decision Letter...') : toast.info('Decision letter not generated yet.')} 
+                      style={{ ...actionBtnStyle, opacity: hasDecision ? 1 : 0.6, cursor: hasDecision ? 'pointer' : 'not-allowed', background: hasDecision ? '#fff' : '#F9FAFB' }}
+                      onMouseEnter={e => hasDecision && (e.currentTarget.style.borderColor = '#2563EB')} 
+                      onMouseLeave={e => hasDecision && (e.currentTarget.style.borderColor = '#E5E7EB')}
+                    >
+                      <FiFileText size={14} color={hasDecision ? "#2563EB" : "#9CA3AF"} /> 
+                      <span style={{ color: hasDecision ? '#374151' : '#9CA3AF' }}>View Decision Letter</span>
+                    </button>
+                  </>
+                );
+              })()}
             </div>
 
             {/* Participants list */}
@@ -1005,9 +960,9 @@ const JournalDetails = () => {
                 </div>
 
                 <div style={{ fontSize: '13px', color: '#334155', lineHeight: 1.8, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <p style={{ fontWeight: 'bold' }}>Dear Dr. Rahul Sharma,</p>
+                  <p style={{ fontWeight: 'bold' }}>Dear {currentJournal.primaryAuthorName || currentJournal.primaryAuthor || 'Author'},</p>
                   <p>
-                    We are pleased to inform you that your manuscript entitled <span style={{ fontWeight: 'bold' }}>"A Novel Approach to AI in Healthcare"</span> has been accepted for publication in <span style={{ fontStyle: 'italic' }}>International Journal of Computer Science (IJCS)</span>, Volume 15, Issue 2 (May 2024).
+                    We are pleased to inform you that your manuscript entitled <span style={{ fontWeight: 'bold' }}>"{currentJournal.title || 'Untitled'}"</span> has been accepted for publication in <span style={{ fontStyle: 'italic' }}>{currentJournal.category || currentJournal.journalName || 'OJS Journal'}</span>, Volume {currentJournal.volume || 15}, Issue {currentJournal.issue || 2}.
                   </p>
                   <p>
                     The reviews submitted for your manuscript indicate its originality, contribution to the research area, and clear presentation. We thank you for your valuable contribution to the journal and we look forward to your continued support in the future.
@@ -1125,7 +1080,6 @@ const JournalDetails = () => {
             <span onClick={() => setActiveSubTab('Publication Details')} style={subTabItemStyle('Publication Details')}>Publication Details</span>
             <span onClick={() => setActiveSubTab('Article Information')} style={subTabItemStyle('Article Information')}>Article Information</span>
             <span onClick={() => setActiveSubTab('Review & Decision')} style={subTabItemStyle('Review & Decision')}>Review & Decision</span>
-            <span onClick={() => setActiveSubTab('Communication')} style={subTabItemStyle('Communication')}>Communication</span>
             <span onClick={() => setActiveSubTab('Citations & Metrics')} style={subTabItemStyle('Citations & Metrics')}>Citations & Metrics</span>
             <span onClick={() => setActiveSubTab('Download & Share')} style={subTabItemStyle('Download & Share')}>Download & Share</span>
           </div>
@@ -1141,40 +1095,40 @@ const JournalDetails = () => {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '12.5px' }}>
                     <div style={{ display: 'flex', borderBottom: '1px solid #F3F4F6', paddingBottom: '10px', alignItems: 'flex-start' }}>
                       <span style={{ color: '#6B7280', width: '120px', fontWeight: 500, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px' }}><FiUser size={13} /> Article Title</span>
-                      <span style={{ color: '#111827', fontWeight: 600, flex: 1 }}>A Novel Approach to AI in Healthcare</span>
+                      <span style={{ color: '#111827', fontWeight: 600, flex: 1 }}>{currentJournal.title || 'Untitled'}</span>
                     </div>
 
                     <div style={{ display: 'flex', borderBottom: '1px solid #F3F4F6', paddingBottom: '10px', alignItems: 'flex-start' }}>
                       <span style={{ color: '#6B7280', width: '120px', fontWeight: 500, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px' }}><FiBookOpen size={13} /> Journal Name</span>
-                      <span style={{ color: '#111827', fontWeight: 600, flex: 1 }}>International Journal of Computer Science (IJCS)</span>
+                      <span style={{ color: '#111827', fontWeight: 600, flex: 1 }}>{currentJournal.category || currentJournal.journalName || 'OJS Journal'}</span>
                     </div>
 
                     <div style={{ display: 'flex', borderBottom: '1px solid #F3F4F6', paddingBottom: '10px', alignItems: 'flex-start' }}>
                       <span style={{ color: '#6B7280', width: '120px', fontWeight: 500, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px' }}><FiLink size={13} /> DOI</span>
-                      <span style={{ color: '#2563EB', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }} onClick={() => copyToClipboard('10.1234/ijcs.2024.0512')}>
-                        10.1234/ijcs.2024.0512 <FiCopy size={12} color="#9CA3AF" />
+                      <span style={{ color: '#2563EB', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }} onClick={() => copyToClipboard(currentJournal.doi || '10.1234/' + currentJournal.id?.toLowerCase())}>
+                        {currentJournal.doi || '10.1234/' + currentJournal.id?.toLowerCase()} <FiCopy size={12} color="#9CA3AF" />
                       </span>
                     </div>
 
                     <div style={{ display: 'flex', borderBottom: '1px solid #F3F4F6', paddingBottom: '10px', alignItems: 'flex-start' }}>
                       <span style={{ color: '#6B7280', width: '120px', fontWeight: 500, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px' }}><FiCalendar size={13} /> Published On</span>
-                      <span style={{ color: '#111827', fontWeight: 600, flex: 1 }}>20 May 2024, 11:20 AM</span>
+                      <span style={{ color: '#111827', fontWeight: 600, flex: 1 }}>{currentJournal.status === 'Published' ? currentJournal.date : 'TBD'}</span>
                     </div>
 
                     <div style={{ display: 'flex', borderBottom: '1px solid #F3F4F6', paddingBottom: '10px', alignItems: 'flex-start' }}>
                       <span style={{ color: '#6B7280', width: '120px', fontWeight: 500, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px' }}><FiBook size={13} /> Volume / Issue</span>
-                      <span style={{ color: '#111827', fontWeight: 600, flex: 1 }}>Volume 15, Issue 2, May 2024</span>
+                      <span style={{ color: '#111827', fontWeight: 600, flex: 1 }}>{currentJournal.volume || 'Volume 1, Issue 1'}</span>
                     </div>
 
                     <div style={{ display: 'flex', borderBottom: '1px solid #F3F4F6', paddingBottom: '10px', alignItems: 'flex-start' }}>
                       <span style={{ color: '#6B7280', width: '120px', fontWeight: 500, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px' }}><FiFileText size={13} /> Pages</span>
-                      <span style={{ color: '#111827', fontWeight: 600, flex: 1 }}>123 - 138 (16 Pages)</span>
+                      <span style={{ color: '#111827', fontWeight: 600, flex: 1 }}>{currentJournal.pages || 'TBD'}</span>
                     </div>
 
                     <div style={{ display: 'flex', paddingBottom: '4px', alignItems: 'flex-start' }}>
                       <span style={{ color: '#6B7280', width: '120px', fontWeight: 500, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px' }}><FiLink size={13} /> Article URL</span>
-                      <span style={{ color: '#2563EB', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }} onClick={() => copyToClipboard('https://ijcs.org/volume-15/issue-2/ijcs.2024.0512')}>
-                        https://ijcs.org/volume-15/issue-2/ijcs.2024.0512 <FiExternalLink size={12} color="#9CA3AF" />
+                      <span style={{ color: '#2563EB', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }} onClick={() => { copyToClipboard(`https://doi.org/${currentJournal.doi || '10.1234/' + currentJournal.id?.toLowerCase()}`); toast.success('URL copied!'); }}>
+                        https://doi.org/{currentJournal.doi || '10.1234/' + currentJournal.id?.toLowerCase()} <FiExternalLink size={12} color="#9CA3AF" />
                       </span>
                     </div>
                   </div>
@@ -1221,50 +1175,60 @@ const JournalDetails = () => {
                     <div style={{ position: 'absolute', left: '9px', top: '10px', bottom: '10px', width: '2px', background: '#2563EB' }} />
                     
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
-                      <div style={{ background: '#22C55E', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
-                        <FiCheck size={11} color="#fff" />
+                      <div style={{ background: currentJournal.status === 'Pending Review' ? '#2563EB' : '#22C55E', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                        {currentJournal.status === 'Pending Review' ? <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} /> : <FiCheck size={11} color="#fff" />}
                       </div>
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: '#374151', flex: 1 }}>Submitted</span>
-                      <span style={{ fontSize: '11px', color: '#9CA3AF' }}>12 May 2024, 10:30 AM</span>
+                      <span style={{ fontSize: '12px', fontWeight: currentJournal.status === 'Pending Review' ? 700 : 600, color: currentJournal.status === 'Pending Review' ? '#2563EB' : '#374151', flex: 1 }}>Submitted</span>
+                      <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{currentJournal.date}</span>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
-                      <div style={{ background: '#22C55E', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
-                        <FiCheck size={11} color="#fff" />
+                    {['Under Review', 'Reviewed', 'Approved', 'Rejected', 'Published'].includes(currentJournal.status) && (
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
+                        <div style={{ background: currentJournal.status === 'Under Review' ? '#2563EB' : '#22C55E', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                          {currentJournal.status === 'Under Review' ? <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} /> : <FiCheck size={11} color="#fff" />}
+                        </div>
+                        <span style={{ fontSize: '12px', fontWeight: currentJournal.status === 'Under Review' ? 700 : 600, color: currentJournal.status === 'Under Review' ? '#2563EB' : '#374151', flex: 1 }}>Under Review</span>
+                        <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{currentJournal.date}</span>
                       </div>
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: '#374151', flex: 1 }}>Under Review</span>
-                      <span style={{ fontSize: '11px', color: '#9CA3AF' }}>14 May 2024, 02:15 PM</span>
-                    </div>
+                    )}
 
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
-                      <div style={{ background: '#22C55E', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
-                        <FiCheck size={11} color="#fff" />
+                    {['Reviewed', 'Approved', 'Rejected', 'Published'].includes(currentJournal.status) && (
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
+                        <div style={{ background: currentJournal.status === 'Reviewed' ? '#2563EB' : '#22C55E', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                          {currentJournal.status === 'Reviewed' ? <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} /> : <FiCheck size={11} color="#fff" />}
+                        </div>
+                        <span style={{ fontSize: '12px', fontWeight: currentJournal.status === 'Reviewed' ? 700 : 600, color: currentJournal.status === 'Reviewed' ? '#2563EB' : '#374151', flex: 1 }}>Review Completed</span>
+                        <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{currentJournal.date}</span>
                       </div>
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: '#374151', flex: 1 }}>Review Completed</span>
-                      <span style={{ fontSize: '11px', color: '#9CA3AF' }}>18 May 2024, 03:45 PM</span>
-                    </div>
+                    )}
 
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
-                      <div style={{ background: '#22C55E', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
-                        <FiCheck size={11} color="#fff" />
+                    {['Approved', 'Rejected'].includes(currentJournal.status) && (
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
+                        <div style={{ background: currentJournal.status === 'Rejected' ? '#EF4444' : '#2563EB', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} />
+                        </div>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: currentJournal.status === 'Rejected' ? '#EF4444' : '#2563EB', flex: 1 }}>Decision: {currentJournal.status}</span>
+                        <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{currentJournal.date}</span>
                       </div>
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: '#374151', flex: 1 }}>Decision Made</span>
-                      <span style={{ fontSize: '11px', color: '#9CA3AF' }}>19 May 2024, 05:20 PM</span>
-                    </div>
+                    )}
 
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
-                      <div style={{ background: '#2563EB', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
-                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} />
+                    {currentJournal.status === 'Published' && (
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
+                        <div style={{ background: '#2563EB', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} />
+                        </div>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#2563EB', flex: 1 }}>Published</span>
+                        <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{currentJournal.date}</span>
                       </div>
-                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#2563EB', flex: 1 }}>Published</span>
-                      <span style={{ fontSize: '11px', color: '#9CA3AF' }}>20 May 2024, 11:20 AM</span>
-                    </div>
+                    )}
                   </div>
 
                   {/* Timeline Success notice banner */}
-                  <div style={{ background: '#F0FDF4', border: '1px solid #DCFCE7', borderRadius: '8px', padding: '12px', marginTop: '16px', fontSize: '12px', color: '#15803D', lineHeight: 1.5 }}>
-                    Your article is now live and accessible to readers worldwide. Thank you for contributing to the research community!
-                  </div>
+                  {currentJournal.status === 'Published' && (
+                    <div style={{ background: '#F0FDF4', border: '1px solid #DCFCE7', borderRadius: '8px', padding: '12px', marginTop: '16px', fontSize: '12px', color: '#15803D', lineHeight: 1.5 }}>
+                      Your article is now live and accessible to readers worldwide. Thank you for contributing to the research community!
+                    </div>
+                  )}
                 </div>
 
                 {/* Share & Promote */}
@@ -1273,12 +1237,12 @@ const JournalDetails = () => {
                   <span style={{ fontSize: '11.5px', color: '#6B7280' }}>Share your published work and increase its visibility.</span>
                   
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '4px' }}>
-                    <button style={{ ...actionBtnStyle, padding: '8px 10px', fontSize: '11.5px' }}><FiTwitter size={13} color="#1DA1F2" /> Share on Twitter</button>
-                    <button style={{ ...actionBtnStyle, padding: '8px 10px', fontSize: '11.5px' }}><FiLinkedin size={13} color="#0A66C2" /> Share on LinkedIn</button>
-                    <button style={{ ...actionBtnStyle, padding: '8px 10px', fontSize: '11.5px' }}><FiFacebook size={13} color="#1877F2" /> Share on Facebook</button>
-                    <button style={{ ...actionBtnStyle, padding: '8px 10px', fontSize: '11.5px' }} onClick={() => copyToClipboard('https://ijcs.org/volume-15/issue-2/ijcs.2024.0512')}><FiLink size={13} color="#2563EB" /> Copy Article Link</button>
-                    <button style={{ ...actionBtnStyle, padding: '8px 10px', fontSize: '11.5px' }}><FiMail size={13} color="#2563EB" /> Email to Colleagues</button>
-                    <button style={{ ...actionBtnStyle, padding: '8px 10px', fontSize: '11.5px' }}><FiActivity size={13} color="#EF4444" /> View Altmetric</button>
+                    <button onClick={() => window.open(`https://twitter.org/share?url=${encodeURIComponent('https://doi.org/' + (currentJournal.doi || '10.1234/' + currentJournal.id?.toLowerCase()))}`)} style={{ ...actionBtnStyle, padding: '8px 10px', fontSize: '11.5px' }}><FiTwitter size={13} color="#1DA1F2" /> Share on Twitter</button>
+                    <button onClick={() => window.open(`https://linkedin.com/shareArticle?url=${encodeURIComponent('https://doi.org/' + (currentJournal.doi || '10.1234/' + currentJournal.id?.toLowerCase()))}`)} style={{ ...actionBtnStyle, padding: '8px 10px', fontSize: '11.5px' }}><FiLinkedin size={13} color="#0A66C2" /> Share on LinkedIn</button>
+                    <button onClick={() => window.open(`https://facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://doi.org/' + (currentJournal.doi || '10.1234/' + currentJournal.id?.toLowerCase()))}`)} style={{ ...actionBtnStyle, padding: '8px 10px', fontSize: '11.5px' }}><FiFacebook size={13} color="#1877F2" /> Share on Facebook</button>
+                    <button style={{ ...actionBtnStyle, padding: '8px 10px', fontSize: '11.5px' }} onClick={() => { copyToClipboard('https://doi.org/' + (currentJournal.doi || '10.1234/' + currentJournal.id?.toLowerCase())); toast.success('Link copied!'); }}><FiLink size={13} color="#2563EB" /> Copy Article Link</button>
+                    <button onClick={() => window.open(`mailto:?subject=${encodeURIComponent(currentJournal.title || 'Journal Article')}&body=${encodeURIComponent('Check out this article: https://doi.org/' + (currentJournal.doi || '10.1234/' + currentJournal.id?.toLowerCase()))}`)} style={{ ...actionBtnStyle, padding: '8px 10px', fontSize: '11.5px' }}><FiMail size={13} color="#2563EB" /> Email to Colleagues</button>
+                    <button onClick={() => toast.info('Loading Altmetric details...')} style={{ ...actionBtnStyle, padding: '8px 10px', fontSize: '11.5px' }}><FiActivity size={13} color="#EF4444" /> View Altmetric</button>
                   </div>
                 </div>
 
@@ -1292,22 +1256,22 @@ const JournalDetails = () => {
               
               {/* Article Information Box */}
               <div style={{ ...cardStyle, padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                <div style={{ display: 'flex', justifyBetween: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <h3 style={{ fontSize: '14.5px', fontWeight: 700, color: '#111827', fontFamily: 'Poppins, sans-serif', margin: 0 }}>Article Information</h3>
-                  <button style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff', border: '1px solid #D1D5DB', color: '#374151', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                  {/* <button onClick={() => toast.info('Edit mode enabled for Article Information')} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff', border: '1px solid #D1D5DB', color: '#374151', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                     <FiEdit size={12} /> Edit
-                  </button>
+                  </button> */}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '12.5px' }}>
                   <div style={{ display: 'flex', borderBottom: '1px solid #F3F4F6', paddingBottom: '10px' }}>
                     <span style={{ color: '#6B7280', width: '120px', fontWeight: 500, flexShrink: 0 }}>Article Title</span>
-                    <span style={{ color: '#111827', fontWeight: 600 }}>A Novel Approach to AI in Healthcare</span>
+                    <span style={{ color: '#111827', fontWeight: 600 }}>{currentJournal.title || 'Untitled'}</span>
                   </div>
 
                   <div style={{ display: 'flex', borderBottom: '1px solid #F3F4F6', paddingBottom: '10px' }}>
                     <span style={{ color: '#6B7280', width: '120px', fontWeight: 500, flexShrink: 0 }}>Journal</span>
-                    <span style={{ color: '#111827', fontWeight: 600 }}>International Journal of Computer Science (IJCS)</span>
+                    <span style={{ color: '#111827', fontWeight: 600 }}>{currentJournal.category || currentJournal.journalName || 'OJS Journal'}</span>
                   </div>
 
                   <div style={{ display: 'flex', borderBottom: '1px solid #F3F4F6', paddingBottom: '10px' }}>
@@ -1317,13 +1281,13 @@ const JournalDetails = () => {
 
                   <div style={{ display: 'flex', borderBottom: '1px solid #F3F4F6', paddingBottom: '10px' }}>
                     <span style={{ color: '#6B7280', width: '120px', fontWeight: 500, flexShrink: 0 }}>Subject Area</span>
-                    <span style={{ color: '#111827', fontWeight: 600 }}>Computer Science / Artificial Intelligence</span>
+                    <span style={{ color: '#111827', fontWeight: 600 }}>{currentJournal.dept || 'General'}</span>
                   </div>
 
                   <div style={{ display: 'flex', borderBottom: '1px solid #F3F4F6', paddingBottom: '10px', alignItems: 'center' }}>
                     <span style={{ color: '#6B7280', width: '120px', fontWeight: 500, flexShrink: 0 }}>Keywords</span>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                      {['Artificial Intelligence', 'Healthcare', 'Machine Learning', 'Deep Learning', 'Diagnostics'].map(tag => (
+                      {(currentJournal.keywords && currentJournal.keywords.length > 0 ? currentJournal.keywords : ['Research', 'Journal']).map(tag => (
                         <span key={tag} style={{ background: '#EFF6FF', color: '#2563EB', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600 }}>{tag}</span>
                       ))}
                     </div>
@@ -1332,14 +1296,14 @@ const JournalDetails = () => {
                   <div style={{ display: 'flex', borderBottom: '1px solid #F3F4F6', paddingBottom: '10px' }}>
                     <span style={{ color: '#6B7280', width: '120px', fontWeight: 500, flexShrink: 0 }}>Abstract</span>
                     <span style={{ color: '#4B5563', lineHeight: 1.6, flex: 1 }}>
-                      This paper presents a novel approach to leveraging artificial intelligence techniques to improve healthcare outcomes. We propose a framework that integrates machine learning models with real-time patient data to assist in early diagnosis, treatment planning, and outcome prediction. Experimental results demonstrate the effectiveness of our approach in improving accuracy and efficiency in healthcare systems.
+                      {currentJournal.abstract || 'No abstract available.'}
                     </span>
                   </div>
 
                   <div style={{ display: 'flex', borderBottom: '1px solid #F3F4F6', paddingBottom: '10px', alignItems: 'center' }}>
                     <span style={{ color: '#6B7280', width: '120px', fontWeight: 500, flexShrink: 0 }}>DOI</span>
-                    <span style={{ color: '#2563EB', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }} onClick={() => copyToClipboard('10.1234/ijcs.2024.0512')}>
-                      10.1234/ijcs.2024.0512 <FiCopy size={12} color="#9CA3AF" />
+                    <span style={{ color: '#2563EB', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }} onClick={() => copyToClipboard(currentJournal.doi || '10.1234/' + currentJournal.id?.toLowerCase())}>
+                      {currentJournal.doi || '10.1234/' + currentJournal.id?.toLowerCase()} <FiCopy size={12} color="#9CA3AF" />
                     </span>
                   </div>
 
@@ -1357,50 +1321,46 @@ const JournalDetails = () => {
                   <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#111827', fontFamily: 'Poppins, sans-serif', margin: '0 0 16px' }}>Authors</h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                      <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=80" alt="auth-1" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
+                      <div style={{ background: '#E0F2FE', color: '#0369A1', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '13px' }}>
+                        {(currentJournal.primaryAuthorName || currentJournal.primaryAuthor || 'A').substring(0, 2).toUpperCase()}
+                      </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                        <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#111827' }}>Dr. Rahul Sharma</span>
+                        <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#111827' }}>{currentJournal.primaryAuthorName || currentJournal.primaryAuthorId?.name || currentJournal.primaryAuthor || 'Unknown Author'}</span>
                         <span style={{ fontSize: '11px', color: '#6B7280', fontWeight: 500 }}>Corresponding Author</span>
-                        <span style={{ fontSize: '10.5px', color: '#9CA3AF' }}>rahul.sharma@univ.edu</span>
+                        <span style={{ fontSize: '10.5px', color: '#9CA3AF' }}>{currentJournal.email || currentJournal.primaryAuthorId?.email || 'author@univ.edu'}</span>
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                      <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80" alt="auth-2" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                        <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#111827' }}>Dr. Priya Verma</span>
-                        <span style={{ fontSize: '11px', color: '#6B7280', fontWeight: 500 }}>Co-author</span>
-                        <span style={{ fontSize: '10.5px', color: '#9CA3AF' }}>priya.verma@univ.edu</span>
+                    {(currentJournal.coAuthors || []).map((coAuthor, idx) => (
+                      <div key={idx} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <div style={{ background: '#F3E8FF', color: '#7E22CE', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '13px' }}>
+                          {coAuthor.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                          <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#111827' }}>{coAuthor}</span>
+                          <span style={{ fontSize: '11px', color: '#6B7280', fontWeight: 500 }}>Co-author</span>
+                        </div>
                       </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                      <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80" alt="auth-3" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                        <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#111827' }}>Dr. Amit Kumar</span>
-                        <span style={{ fontSize: '11px', color: '#6B7280', fontWeight: 500 }}>Co-author</span>
-                        <span style={{ fontSize: '10.5px', color: '#9CA3AF' }}>amit.kumar@univ.edu</span>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
 
                 {/* Actions */}
                 <div style={{ ...cardStyle, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: '#111827', margin: '0 0 6px', fontFamily: 'Poppins, sans-serif' }}>Actions</h4>
-                  <button style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
+                  <button onClick={() => setShowArticleModal(true)} style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
                     <FiEye size={14} color="#2563EB" /> View Full Article
                   </button>
-                  <button style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
+                  <button onClick={() => handleDownload('pdf')} style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
                     <FiDownload size={14} color="#2563EB" /> Download Article (PDF)
                   </button>
-                  <button style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
+                  <button onClick={() => handleDownload('cert')} style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
                     <FiFileText size={14} color="#2563EB" /> Download Certificate
                   </button>
-                  <button style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
+                  <button onClick={handleShare} style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
                     <FiShare2 size={14} color="#2563EB" /> Share Article
                   </button>
-                  <button style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
+                  <button onClick={handlePrintArticle} style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
                     <FiPrinter size={14} color="#2563EB" /> Print Article
                   </button>
                 </div>
@@ -1418,91 +1378,116 @@ const JournalDetails = () => {
                 {/* Reports Container */}
                 <div style={{ ...cardStyle, padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <h3 style={{ fontSize: '14.5px', fontWeight: 700, color: '#111827', fontFamily: 'Poppins, sans-serif', margin: 0 }}>Peer Review Reports</h3>
-                  
-                  {/* Reviewer 1 */}
-                  <div style={{ border: '1px solid #E5E7EB', borderRadius: '10px', padding: '16px', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-                    <div style={{ background: '#2563EB', color: '#fff', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px', flexShrink: 0 }}>
-                      R1
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
-                      <div style={{ display: 'flex', justifyBetween: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
-                        <div>
-                          <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#111827', margin: 0 }}>Reviewer 1</h4>
-                          <span style={{ background: '#DCFCE7', color: '#15803D', padding: '1px 6px', borderRadius: '4px', fontSize: '9.5px', fontWeight: 700, marginTop: '2px', display: 'inline-block' }}>Completed</span>
+                  {['Published', 'Reviewed', 'Approved'].includes(currentJournal.status) ? (
+                    <>
+                      {/* Reviewer 1 */}
+                      <div style={{ border: '1px solid #E5E7EB', borderRadius: '10px', padding: '16px', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                        <div style={{ background: '#2563EB', color: '#fff', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px', flexShrink: 0 }}>
+                          R1
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#9CA3AF', marginLeft: 'auto' }}>
-                          <FiCalendar size={12} /> Reviewed on 14 May 2024
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+                          <div style={{ display: 'flex', justifyBetween: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                            <div>
+                              <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#111827', margin: 0 }}>Reviewer 1</h4>
+                              <span style={{ background: '#DCFCE7', color: '#15803D', padding: '1px 6px', borderRadius: '4px', fontSize: '9.5px', fontWeight: 700, marginTop: '2px', display: 'inline-block' }}>Completed</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#9CA3AF', marginLeft: 'auto' }}>
+                              <FiCalendar size={12} /> Reviewed recently
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', fontSize: '12px', marginTop: '4px' }}>
+                            <span style={{ color: '#6B7280', fontWeight: 500 }}>Recommendation</span>
+                            <span style={{ background: '#DCFCE7', color: '#15803D', padding: '2px 8px', borderRadius: '4px', fontSize: '10.5px', fontWeight: 700 }}>Accept</span>
+                          </div>
+                          <p style={{ fontSize: '12.5px', color: '#4B5563', margin: '4px 0 0', lineHeight: 1.5 }}>
+                            The manuscript is well-written and presents a significant contribution to the field. Minor revisions suggested in methodology section.
+                          </p>
+                          <button style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', border: '1px solid #2563EB', color: '#2563EB', background: '#fff', borderRadius: '6px', padding: '5px 12px', fontSize: '11.5px', fontWeight: 600, cursor: 'pointer', marginTop: '6px', alignSelf: 'flex-start' }}>
+                            <FiEye size={12} /> View Full Report
+                          </button>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', fontSize: '12px', marginTop: '4px' }}>
-                        <span style={{ color: '#6B7280', fontWeight: 500 }}>Recommendation</span>
-                        <span style={{ background: '#DCFCE7', color: '#15803D', padding: '2px 8px', borderRadius: '4px', fontSize: '10.5px', fontWeight: 700 }}>Accept</span>
-                      </div>
-                      <p style={{ fontSize: '12.5px', color: '#4B5563', margin: '4px 0 0', lineHeight: 1.5 }}>
-                        The manuscript is well-written and presents a significant contribution to the field. Minor revisions suggested in methodology section.
-                      </p>
-                      <button style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', border: '1px solid #2563EB', color: '#2563EB', background: '#fff', borderRadius: '6px', padding: '5px 12px', fontSize: '11.5px', fontWeight: 600, cursor: 'pointer', marginTop: '6px', alignSelf: 'flex-start' }}>
-                        <FiEye size={12} /> View Full Report
-                      </button>
-                    </div>
-                  </div>
 
-                  {/* Reviewer 2 */}
-                  <div style={{ border: '1px solid #E5E7EB', borderRadius: '10px', padding: '16px', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-                    <div style={{ background: '#7C3AED', color: '#fff', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px', flexShrink: 0 }}>
-                      R2
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
-                      <div style={{ display: 'flex', justifyBetween: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
-                        <div>
-                          <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#111827', margin: 0 }}>Reviewer 2</h4>
-                          <span style={{ background: '#DCFCE7', color: '#15803D', padding: '1px 6px', borderRadius: '4px', fontSize: '9.5px', fontWeight: 700, marginTop: '2px', display: 'inline-block' }}>Completed</span>
+                      {/* Reviewer 2 */}
+                      <div style={{ border: '1px solid #E5E7EB', borderRadius: '10px', padding: '16px', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                        <div style={{ background: '#7C3AED', color: '#fff', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px', flexShrink: 0 }}>
+                          R2
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#9CA3AF', marginLeft: 'auto' }}>
-                          <FiCalendar size={12} /> Reviewed on 13 May 2024
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+                          <div style={{ display: 'flex', justifyBetween: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                            <div>
+                              <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#111827', margin: 0 }}>Reviewer 2</h4>
+                              <span style={{ background: '#DCFCE7', color: '#15803D', padding: '1px 6px', borderRadius: '4px', fontSize: '9.5px', fontWeight: 700, marginTop: '2px', display: 'inline-block' }}>Completed</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#9CA3AF', marginLeft: 'auto' }}>
+                              <FiCalendar size={12} /> Reviewed recently
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', fontSize: '12px', marginTop: '4px' }}>
+                            <span style={{ color: '#6B7280', fontWeight: 500 }}>Recommendation</span>
+                            <span style={{ background: '#DCFCE7', color: '#15803D', padding: '2px 8px', borderRadius: '4px', fontSize: '10.5px', fontWeight: 700 }}>Accept</span>
+                          </div>
+                          <p style={{ fontSize: '12.5px', color: '#4B5563', margin: '4px 0 0', lineHeight: 1.5 }}>
+                            Good quality research with clear results and strong conclusions. Some minor language and formatting issues.
+                          </p>
+                          <button style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', border: '1px solid #2563EB', color: '#2563EB', background: '#fff', borderRadius: '6px', padding: '5px 12px', fontSize: '11.5px', fontWeight: 600, cursor: 'pointer', marginTop: '6px', alignSelf: 'flex-start' }}>
+                            <FiEye size={12} /> View Full Report
+                          </button>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', fontSize: '12px', marginTop: '4px' }}>
-                        <span style={{ color: '#6B7280', fontWeight: 500 }}>Recommendation</span>
-                        <span style={{ background: '#DCFCE7', color: '#15803D', padding: '2px 8px', borderRadius: '4px', fontSize: '10.5px', fontWeight: 700 }}>Accept</span>
-                      </div>
-                      <p style={{ fontSize: '12.5px', color: '#4B5563', margin: '4px 0 0', lineHeight: 1.5 }}>
-                        Good quality research with clear results and strong conclusions. Some minor language and formatting issues.
-                      </p>
-                      <button style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', border: '1px solid #2563EB', color: '#2563EB', background: '#fff', borderRadius: '6px', padding: '5px 12px', fontSize: '11.5px', fontWeight: 600, cursor: 'pointer', marginTop: '6px', alignSelf: 'flex-start' }}>
-                        <FiEye size={12} /> View Full Report
-                      </button>
-                    </div>
-                  </div>
-
+                    </>
+                  ) : (
+                    <p style={{ fontSize: '12.5px', color: '#6B7280', margin: 0 }}>Peer review reports will be available here once completed.</p>
+                  )}
                 </div>
 
                 {/* Editorial Decision Box */}
                 <div style={{ ...cardStyle, padding: '24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   <h3 style={{ fontSize: '14.5px', fontWeight: 700, color: '#111827', fontFamily: 'Poppins, sans-serif', margin: 0 }}>Editorial Decision</h3>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ background: '#D1FAE5', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <FiCheck size={16} color="#059669" />
-                    </div>
-                    <div>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#111827' }}>Decision</span>
-                        <span style={{ background: '#DCFCE7', color: '#15803D', padding: '2px 8px', borderRadius: '4px', fontSize: '10.5px', fontWeight: 700 }}>Accept</span>
+                  {['Published', 'Approved'].includes(currentJournal.status) ? (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ background: '#D1FAE5', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <FiCheck size={16} color="#059669" />
+                        </div>
+                        <div>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <span style={{ fontSize: '13px', fontWeight: 700, color: '#111827' }}>Decision</span>
+                            <span style={{ background: '#DCFCE7', color: '#15803D', padding: '2px 8px', borderRadius: '4px', fontSize: '10.5px', fontWeight: 700 }}>Accept</span>
+                          </div>
+                          <p style={{ fontSize: '11.5px', color: '#6B7280', margin: '4px 0 0' }}>
+                            The editorial team has accepted your manuscript for publication. <br/>
+                            Decided by: <span style={{ fontWeight: 600, color: '#4B5563' }}>Editorial Team</span>
+                          </p>
+                        </div>
                       </div>
-                      <p style={{ fontSize: '11.5px', color: '#6B7280', margin: '4px 0 0' }}>
-                        The editorial team has accepted your manuscript for publication. <br/>
-                        Decided on: <span style={{ fontWeight: 600, color: '#4B5563' }}>19 May 2024, 05:20 PM</span> | Decided by: <span style={{ fontWeight: 600, color: '#4B5563' }}>Editorial Team</span>
-                      </p>
-                    </div>
-                  </div>
 
-                  {/* Editor's Comments */}
-                  <div style={{ borderLeft: '4px solid #10B981', background: '#F0FDF4', padding: '16px', borderRadius: '0 8px 8px 0', marginTop: '6px' }}>
-                    <div style={{ fontSize: '13px', color: '#166534', fontStyle: 'italic', lineHeight: 1.6 }}>
-                      "We are pleased to accept your manuscript for publication in IJCS. Please address the minor comments and complete the publication process."
-                    </div>
-                    <span style={{ fontSize: '11.5px', color: '#15803D', fontWeight: 700, marginTop: '8px', display: 'block' }}>— Editor's Comments</span>
-                  </div>
+                      {/* Editor's Comments */}
+                      <div style={{ borderLeft: '4px solid #10B981', background: '#F0FDF4', padding: '16px', borderRadius: '0 8px 8px 0', marginTop: '6px' }}>
+                        <div style={{ fontSize: '13px', color: '#166534', fontStyle: 'italic', lineHeight: 1.6 }}>
+                          "We are pleased to accept your manuscript for publication in our journal. Please address any minor comments and complete the publication process."
+                        </div>
+                        <span style={{ fontSize: '11.5px', color: '#15803D', fontWeight: 700, marginTop: '8px', display: 'block' }}>— Editor's Comments</span>
+                      </div>
+                    </>
+                  ) : currentJournal.status === 'Rejected' ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ background: '#FEE2E2', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <FiXCircle size={16} color="#B91C1C" />
+                        </div>
+                        <div>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <span style={{ fontSize: '13px', fontWeight: 700, color: '#111827' }}>Decision</span>
+                            <span style={{ background: '#FEE2E2', color: '#B91C1C', padding: '2px 8px', borderRadius: '4px', fontSize: '10.5px', fontWeight: 700 }}>Reject</span>
+                          </div>
+                          <p style={{ fontSize: '11.5px', color: '#6B7280', margin: '4px 0 0' }}>
+                            The editorial team has rejected your manuscript.
+                          </p>
+                        </div>
+                      </div>
+                  ) : (
+                    <p style={{ fontSize: '12.5px', color: '#6B7280', margin: 0 }}>Editorial decision is pending.</p>
+                  )}
                 </div>
 
               </div>
@@ -1517,42 +1502,43 @@ const JournalDetails = () => {
                     <div style={{ position: 'absolute', left: '9px', top: '10px', bottom: '10px', width: '2px', background: '#2563EB' }} />
                     
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
-                      <div style={{ background: '#22C55E', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
-                        <FiCheck size={11} color="#fff" />
+                      <div style={{ background: currentJournal.status === 'Pending Review' ? '#2563EB' : '#22C55E', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                        {currentJournal.status === 'Pending Review' ? <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} /> : <FiCheck size={11} color="#fff" />}
                       </div>
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: '#374151', flex: 1 }}>Submitted</span>
-                      <span style={{ fontSize: '11px', color: '#9CA3AF' }}>12 May 2024, 10:30 AM</span>
+                      <span style={{ fontSize: '12px', fontWeight: currentJournal.status === 'Pending Review' ? 700 : 600, color: currentJournal.status === 'Pending Review' ? '#2563EB' : '#374151', flex: 1 }}>Submitted</span>
+                      <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{currentJournal.date}</span>
                     </div>
 
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
-                      <div style={{ background: '#22C55E', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
-                        <FiCheck size={11} color="#fff" />
+                      <div style={{ background: ['Pending Review'].includes(currentJournal.status) ? '#fff' : (currentJournal.status === 'Under Review' ? '#2563EB' : '#22C55E'), border: ['Pending Review'].includes(currentJournal.status) ? '2px solid #9CA3AF' : 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                        {!['Pending Review'].includes(currentJournal.status) && (currentJournal.status === 'Under Review' ? <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} /> : <FiCheck size={11} color="#fff" />)}
                       </div>
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: '#374151', flex: 1 }}>Under Review</span>
-                      <span style={{ fontSize: '11px', color: '#9CA3AF' }}>12 May 2024, 11:45 AM</span>
+                      <span style={{ fontSize: '12px', fontWeight: currentJournal.status === 'Under Review' ? 700 : 600, color: ['Pending Review'].includes(currentJournal.status) ? '#6B7280' : (currentJournal.status === 'Under Review' ? '#2563EB' : '#374151'), flex: 1 }}>Under Review</span>
+                      <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{!['Pending Review'].includes(currentJournal.status) ? currentJournal.date : ''}</span>
                     </div>
 
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
-                      <div style={{ background: '#22C55E', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
-                        <FiCheck size={11} color="#fff" />
+                      <div style={{ background: ['Pending Review', 'Under Review'].includes(currentJournal.status) ? '#fff' : (currentJournal.status === 'Reviewed' ? '#2563EB' : '#22C55E'), border: ['Pending Review', 'Under Review'].includes(currentJournal.status) ? '2px solid #9CA3AF' : 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                        {!['Pending Review', 'Under Review'].includes(currentJournal.status) && (currentJournal.status === 'Reviewed' ? <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} /> : <FiCheck size={11} color="#fff" />)}
                       </div>
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: '#374151', flex: 1 }}>Review Completed</span>
-                      <span style={{ fontSize: '11px', color: '#9CA3AF' }}>14 May 2024, 02:15 PM</span>
+                      <span style={{ fontSize: '12px', fontWeight: currentJournal.status === 'Reviewed' ? 700 : 600, color: ['Pending Review', 'Under Review'].includes(currentJournal.status) ? '#6B7280' : (currentJournal.status === 'Reviewed' ? '#2563EB' : '#374151'), flex: 1 }}>Review Completed</span>
+                      <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{!['Pending Review', 'Under Review'].includes(currentJournal.status) ? currentJournal.date : ''}</span>
                     </div>
 
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
-                      <div style={{ background: '#2563EB', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
-                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} />
+                      <div style={{ background: ['Pending Review', 'Under Review', 'Reviewed'].includes(currentJournal.status) ? '#fff' : (['Approved', 'Rejected'].includes(currentJournal.status) ? '#2563EB' : '#22C55E'), border: ['Pending Review', 'Under Review', 'Reviewed'].includes(currentJournal.status) ? '2px solid #9CA3AF' : 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                        {!['Pending Review', 'Under Review', 'Reviewed'].includes(currentJournal.status) && (['Approved', 'Rejected'].includes(currentJournal.status) ? <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} /> : <FiCheck size={11} color="#fff" />)}
                       </div>
-                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#2563EB', flex: 1 }}>Decision Made</span>
-                      <span style={{ fontSize: '11px', color: '#9CA3AF' }}>19 May 2024, 05:20 PM</span>
+                      <span style={{ fontSize: '12px', fontWeight: ['Approved', 'Rejected'].includes(currentJournal.status) ? 700 : 600, color: ['Pending Review', 'Under Review', 'Reviewed'].includes(currentJournal.status) ? '#6B7280' : (['Approved', 'Rejected'].includes(currentJournal.status) ? '#2563EB' : '#374151'), flex: 1 }}>Decision Made</span>
+                      <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{!['Pending Review', 'Under Review', 'Reviewed'].includes(currentJournal.status) ? currentJournal.date : ''}</span>
                     </div>
 
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
-                      <div style={{ background: '#fff', border: '2px solid #9CA3AF', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                      <div style={{ background: currentJournal.status === 'Published' ? '#2563EB' : '#fff', border: currentJournal.status === 'Published' ? 'none' : '2px solid #9CA3AF', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                        {currentJournal.status === 'Published' && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} />}
                       </div>
-                      <span style={{ fontSize: '12px', color: '#6B7280', flex: 1 }}>Published</span>
-                      <span style={{ fontSize: '11px', color: '#9CA3AF' }}>20 May 2024, 11:20 AM</span>
+                      <span style={{ fontSize: '12px', fontWeight: currentJournal.status === 'Published' ? 700 : 600, color: currentJournal.status === 'Published' ? '#2563EB' : '#6B7280', flex: 1 }}>Published</span>
+                      <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{currentJournal.status === 'Published' ? currentJournal.date : ''}</span>
                     </div>
                   </div>
                 </div>
@@ -1560,41 +1546,61 @@ const JournalDetails = () => {
                 {/* Review Summary */}
                 <div style={{ ...cardStyle, padding: '20px 22px' }}>
                   <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#111827', fontFamily: 'Poppins, sans-serif', margin: '0 0 16px' }}>Review Summary</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Total Reviewers</span>
-                      <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#111827' }}>2</span>
+                  {['Pending Review', 'Under Review'].includes(currentJournal.status) ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Total Reviewers</span>
+                        <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#111827' }}>{currentJournal.status === 'Under Review' ? 2 : 0}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Completed Reviews</span>
+                        <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#111827' }}>0</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Pending Reviews</span>
+                        <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#111827' }}>{currentJournal.status === 'Under Review' ? 2 : 0}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Average Recommendation</span>
+                        <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#9CA3AF' }}>Pending</span>
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Completed Reviews</span>
-                      <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#111827' }}>2</span>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Total Reviewers</span>
+                        <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#111827' }}>2</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Completed Reviews</span>
+                        <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#111827' }}>2</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Pending Reviews</span>
+                        <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#111827' }}>0</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Average Recommendation</span>
+                        <span style={{ fontSize: '12.5px', fontWeight: 700, color: currentJournal.status === 'Rejected' ? '#EF4444' : '#10B981', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          {currentJournal.status === 'Rejected' ? '★☆☆☆☆ (1.5)' : '★★★★★ (5.0)'}
+                        </span>
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Pending Reviews</span>
-                      <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#111827' }}>0</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '12.5px', color: '#6B7280', fontWeight: 500 }}>Average Recommendation</span>
-                      <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#10B981', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        ★★★★★ <span style={{ color: '#111827' }}>(5.0)</span>
-                      </span>
-                    </div>
-                  </div>
+                  )}
                 </div>
 
-                {/* Actions */}
                 <div style={{ ...cardStyle, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: '#111827', margin: '0 0 6px', fontFamily: 'Poppins, sans-serif' }}>Actions</h4>
-                  <button style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
+                  <button onClick={() => toast.success('Opening Review Reports...')} style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
                     <FiEye size={14} color="#2563EB" /> View All Reviews
                   </button>
-                  <button style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
+                  <button onClick={() => handleDownload('pdf')} style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
                     <FiDownload size={14} color="#2563EB" /> Download All Reviews (PDF)
                   </button>
-                  <button style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
+                  <button onClick={() => handleDownload('pdf')} style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
                     <FiFileText size={14} color="#2563EB" /> Download Decision Letter
                   </button>
-                  <button style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
+                  <button onClick={() => toast.info('Initiating Appeal Process...')} style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
                     <FiAward size={14} color="#2563EB" /> Appeal Decision
                   </button>
                 </div>
@@ -1604,187 +1610,6 @@ const JournalDetails = () => {
             </div>
           )}
 
-          {activeSubTab === 'Communication' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '280px 1.4fr 1fr', gap: '16px', alignItems: 'start' }}>
-              
-              {/* Message Center list */}
-              <div style={{ ...cardStyle, padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <h3 style={{ fontSize: '14.5px', fontWeight: 700, color: '#111827', margin: 0, fontFamily: 'Poppins, sans-serif' }}>Message Center</h3>
-                  <span style={{ fontSize: '11px', color: '#9CA3AF' }}>View and send messages to the editorial team.</span>
-                </div>
-
-                {/* Dropdown status selector */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F3F4F6', paddingBottom: '10px' }}>
-                  <select style={{ border: 'none', background: 'transparent', fontSize: '12px', fontWeight: 600, color: '#4B5563', outline: 'none', cursor: 'pointer' }}>
-                    <option>All Messages</option>
-                    <option>Editorial Team</option>
-                    <option>Reviewers</option>
-                  </select>
-                </div>
-
-                {/* Messages Sidebar List */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '380px', overflowY: 'auto' }}>
-                  {[
-                    { id: 1, title: 'Final Decision - Article Accepted', sender: 'Editorial Team', time: '19 May 2024, 05:25 PM', status: 'green' },
-                    { id: 2, title: 'Minor Revisions Required', sender: 'Reviewer 1', time: '14 May 2024, 11:45 AM', status: 'blue' },
-                    { id: 3, title: 'Review Report Submitted', sender: 'Reviewer 2', time: '13 May 2024, 10:30 AM', status: 'none' },
-                    { id: 4, title: 'Submission Acknowledgement', sender: 'Editorial Team', time: '12 May 2024, 10:30 AM', status: 'none' }
-                  ].map(m => (
-                    <div 
-                      key={m.id}
-                      onClick={() => setActiveCommMsg(m.id)}
-                      style={{
-                        display: 'flex', gap: '10px', padding: '10px 12px', borderRadius: '10px',
-                        background: activeCommMsg === m.id ? '#EFF6FF' : '#fff',
-                        border: `1px solid ${activeCommMsg === m.id ? '#BFDBFE' : '#F3F4F6'}`,
-                        cursor: 'pointer', transition: 'all 0.15s', position: 'relative'
-                      }}
-                    >
-                      <div style={{ background: activeCommMsg === m.id ? '#2563EB' : '#F3F4F6', color: activeCommMsg === m.id ? '#fff' : '#6B7280', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <FiMail size={12} />
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, overflow: 'hidden' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.title}</span>
-                        <span style={{ fontSize: '11px', color: '#6B7280' }}>{m.sender}</span>
-                        <span style={{ fontSize: '10px', color: '#9CA3AF' }}>{m.time}</span>
-                      </div>
-                      {m.status === 'green' && <div style={{ position: 'absolute', right: '10px', top: '10px', width: '6px', height: '6px', borderRadius: '50%', background: '#10B981' }} />}
-                      {m.status === 'blue' && <div style={{ position: 'absolute', right: '10px', top: '10px', width: '6px', height: '6px', borderRadius: '50%', background: '#2563EB' }} />}
-                    </div>
-                  ))}
-                  <button style={{ background: 'none', border: '1px solid #E5E7EB', borderRadius: '8px', color: '#4B5563', padding: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', marginTop: '4px' }}>
-                    Load More
-                  </button>
-                </div>
-              </div>
-
-              {/* Message Details Pane */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ ...cardStyle, padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', minHeight: '340px' }}>
-                  
-                  {/* Subject Header */}
-                  <div style={{ display: 'flex', justifyBetween: 'space-between', alignItems: 'center', borderBottom: '1px solid #F3F4F6', paddingBottom: '12px' }}>
-                    <div>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: '#111827', margin: 0 }}>Final Decision - Article Accepted</h3>
-                        <span style={{ background: '#DCFCE7', color: '#15803D', padding: '1px 6px', borderRadius: '4px', fontSize: '9.5px', fontWeight: 700 }}>Accept</span>
-                      </div>
-                      <span style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px', display: 'inline-block' }}>
-                        From: <span style={{ fontWeight: 600, color: '#374151' }}>Editorial Team</span> • 19 May 2024, 05:25 PM
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginLeft: 'auto', color: '#9CA3AF' }}>
-                      <FiStar size={15} style={{ cursor: 'pointer' }} />
-                      <FiMoreVertical size={16} style={{ cursor: 'pointer' }} />
-                    </div>
-                  </div>
-
-                  {/* Mail Message Box */}
-                  <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', flex: 1, marginTop: '4px' }}>
-                    <div style={{ background: '#F8FAFC', padding: '20px', borderRadius: '12px', border: '1px solid #E2E8F0', flex: 1, fontSize: '12.5px', color: '#334155', lineHeight: 1.6 }}>
-                      <p style={{ margin: '0 0 12px', fontWeight: 600, color: '#1E293B' }}>Dear Dr. Rahul Sharma,</p>
-                      <p style={{ margin: '0 0 12px' }}>
-                        We are pleased to inform you that your manuscript titled <br/>
-                        <span style={{ fontWeight: 700, color: '#1E293B' }}>"A Novel Approach to AI in Healthcare"</span> <br/>
-                        has been accepted for publication in International Journal of Computer Science (IJCS).
-                      </p>
-                      <p style={{ margin: '0 0 12px' }}>Your article will move to the publication stage. <br/>Congratulations!</p>
-                      <p style={{ margin: '14px 0 2px', fontWeight: 600, color: '#1E293B' }}>Best regards,</p>
-                      <p style={{ margin: '0 0 2px', fontWeight: 600, color: '#1E293B' }}>Editorial Team</p>
-                      <p style={{ margin: 0, fontSize: '11.5px', color: '#6B7280' }}>International Journal of Computer Science (IJCS)</p>
-                    </div>
-                  </div>
-
-                  {/* Reply Input Section */}
-                  <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: '10px' }}>
-                    <div style={{ display: 'flex', gap: '16px', borderBottom: '1px solid #E5E7EB', paddingBottom: '6px', marginBottom: '10px', fontSize: '12px' }}>
-                      <span style={{ fontWeight: 700, color: '#2563EB', borderBottom: '2px solid #2563EB', paddingBottom: '6px', cursor: 'pointer' }}>Reply</span>
-                      <span style={{ color: '#6B7280', paddingBottom: '6px', cursor: 'pointer' }}>New Message</span>
-                    </div>
-
-                    <textarea 
-                      placeholder="Type your message..." 
-                      rows="2" 
-                      value={commReplyText}
-                      onChange={e => setCommReplyText(e.target.value)}
-                      style={{ width: '100%', border: 'none', outline: 'none', fontSize: '12.5px', color: '#111827', resize: 'none', fontFamily: 'inherit' }} 
-                    />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
-                      <div style={{ display: 'flex', gap: '12px', color: '#9CA3AF' }}>
-                        <FiPaperclip size={15} style={{ cursor: 'pointer' }} />
-                        <FiSmile size={15} style={{ cursor: 'pointer' }} />
-                      </div>
-                      <button style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#2563EB', border: 'none', color: '#fff', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 6px rgba(37,99,235,0.3)' }}>
-                        Send Message <FiSend size={12} />
-                      </button>
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-
-              {/* Right Column: Actions & Participants */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {/* Quick Actions */}
-                <div style={{ ...cardStyle, padding: '20px 22px' }}>
-                  <h3 style={{ fontSize: '14.5px', fontWeight: 700, color: '#111827', fontFamily: 'Poppins, sans-serif', margin: '0 0 16px' }}>Quick Actions</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <button style={{ ...actionBtnStyle, padding: '8px 12px' }}><FiMail size={13} color="#2563EB" /> Send New Message</button>
-                    <button style={{ ...actionBtnStyle, padding: '8px 12px' }}><FiUpload size={13} color="#2563EB" /> Upload Additional File</button>
-                    <button style={{ ...actionBtnStyle, padding: '8px 12px' }}><FiMessageCircle size={13} color="#2563EB" /> View All Messages</button>
-                    <button style={{ ...actionBtnStyle, padding: '8px 12px' }}><FiDownload size={13} color="#2563EB" /> Download All Messages</button>
-                  </div>
-                </div>
-
-                {/* Participants */}
-                <div style={{ ...cardStyle, padding: '20px 22px' }}>
-                  <h3 style={{ fontSize: '14.5px', fontWeight: 700, color: '#111827', fontFamily: 'Poppins, sans-serif', margin: '0 0 16px' }}>Participants</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                    
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                      <div style={{ background: '#EFF6FF', color: '#2563EB', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '11px' }}>E</div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', flex: 1 }}>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#111827' }}>Editorial Team</span>
-                        <span style={{ fontSize: '10.5px', color: '#9CA3AF' }}>editor@ijcs.org</span>
-                      </div>
-                      <span style={{ background: '#DCFCE7', color: '#15803D', padding: '1px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 700 }}>Editor</span>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                      <div style={{ background: '#EFF6FF', color: '#2563EB', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '11px' }}>R</div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', flex: 1 }}>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#111827' }}>Dr. Rahul Sharma <span style={{ fontWeight: 500, color: '#9CA3AF' }}>(You)</span></span>
-                        <span style={{ fontSize: '10.5px', color: '#9CA3AF' }}>rahul.sharma@univ.edu</span>
-                      </div>
-                      <span style={{ background: '#E0F2FE', color: '#0369A1', padding: '1px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 700 }}>Author</span>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                      <div style={{ background: '#F3E8FF', color: '#7E22CE', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '11px' }}>R1</div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', flex: 1 }}>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#111827' }}>Reviewer 1</span>
-                        <span style={{ fontSize: '10.5px', color: '#9CA3AF' }}>rev1@ijcs.org</span>
-                      </div>
-                      <span style={{ background: '#F3E8FF', color: '#7E22CE', padding: '1px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 700 }}>Reviewer</span>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                      <div style={{ background: '#F3E8FF', color: '#7E22CE', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '11px' }}>R2</div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', flex: 1 }}>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#111827' }}>Reviewer 2</span>
-                        <span style={{ fontSize: '10.5px', color: '#9CA3AF' }}>rev2@ijcs.org</span>
-                      </div>
-                      <span style={{ background: '#F3E8FF', color: '#7E22CE', padding: '1px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 700 }}>Reviewer</span>
-                    </div>
-
-                  </div>
-                </div>
-
-              </div>
-
-            </div>
-          )}
 
           {activeSubTab === 'Citations & Metrics' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.3fr 1fr', gap: '16px', marginTop: '4px' }}>
@@ -1793,9 +1618,9 @@ const JournalDetails = () => {
               <div style={{ ...cardStyle, padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: '#111827', margin: 0, fontFamily: 'Poppins, sans-serif' }}>Citation (APA Style)</h4>
                 <p style={{ fontSize: '11.5px', color: '#4B5563', lineHeight: 1.6, margin: 0, fontStyle: 'italic', background: '#F8FAFC', padding: '12px 14px', borderRadius: '8px', border: '1px dashed #E2E8F0' }}>
-                  Sharma, R., Verma, P., & Kumar, A. (2024). A novel approach to AI in healthcare. International Journal of Computer Science (IJCS), 15(2), 123-138. https://doi.org/10.1234/ijcs.2024.0512
+                  {currentJournal.primaryAuthor} (2024). {currentJournal.title}. International Journal of {currentJournal.dept}, 15(2), 123-138. https://doi.org/10.1234/{currentJournal.id.toLowerCase()}
                 </p>
-                <button onClick={() => copyToClipboard('Sharma, R., Verma, P., & Kumar, A. (2024). A novel approach to AI in healthcare. International Journal of Computer Science (IJCS), 15(2), 123-138. https://doi.org/10.1234/ijcs.2024.0512')} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#fff', border: '1px solid #E5E7EB', color: '#2563EB', padding: '6px 12px', borderRadius: '8px', fontSize: '11.5px', fontWeight: 600, cursor: 'pointer', alignSelf: 'flex-start' }}>
+                <button onClick={() => copyToClipboard(`${currentJournal.primaryAuthor} (2024). ${currentJournal.title}. International Journal of ${currentJournal.dept}, 15(2), 123-138. https://doi.org/10.1234/${currentJournal.id.toLowerCase()}`)} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#fff', border: '1px solid #E5E7EB', color: '#2563EB', padding: '6px 12px', borderRadius: '8px', fontSize: '11.5px', fontWeight: 600, cursor: 'pointer', alignSelf: 'flex-start' }}>
                   <FiCopy size={12} /> Copy Citation
                 </button>
               </div>
@@ -1806,24 +1631,24 @@ const JournalDetails = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   <div style={{ background: '#F8FAFC', border: '1px solid #F1F5F9', borderRadius: '10px', padding: '10px 14px', textAlign: 'center' }}>
                     <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '0 0 4px' }}>Citations</p>
-                    <p style={{ fontSize: '20px', fontWeight: 800, color: '#111827', margin: '0 0 2px' }}>12</p>
+                    <p style={{ fontSize: '20px', fontWeight: 800, color: '#111827', margin: '0 0 2px' }}>{currentJournal.metrics?.citations || 12}</p>
                     <span style={{ fontSize: '10px', color: '#9CA3AF' }}>Total Citations</span>
                   </div>
                   <div style={{ background: '#F8FAFC', border: '1px solid #F1F5F9', borderRadius: '10px', padding: '10px 14px', textAlign: 'center' }}>
                     <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '0 0 4px' }}>Views</p>
-                    <p style={{ fontSize: '20px', fontWeight: 800, color: '#111827', margin: '0 0 2px' }}>245</p>
+                    <p style={{ fontSize: '20px', fontWeight: 800, color: '#111827', margin: '0 0 2px' }}>{currentJournal.metrics?.views || 245}</p>
                     <span style={{ fontSize: '10px', color: '#9CA3AF' }}>Total Views</span>
                   </div>
                   <div style={{ background: '#F8FAFC', border: '1px solid #F1F5F9', borderRadius: '10px', padding: '10px 14px', textAlign: 'center' }}>
                     <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '0 0 4px' }}>Downloads</p>
-                    <p style={{ fontSize: '20px', fontWeight: 800, color: '#111827', margin: '0 0 2px' }}>156</p>
+                    <p style={{ fontSize: '20px', fontWeight: 800, color: '#111827', margin: '0 0 2px' }}>{currentJournal.metrics?.downloads || 156}</p>
                     <span style={{ fontSize: '10px', color: '#9CA3AF' }}>Total Downloads</span>
                   </div>
                   <div style={{ background: '#F8FAFC', border: '1px solid #F1F5F9', borderRadius: '10px', padding: '10px 14px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                     <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '0 0 4px' }}>Altmetric</p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'conic-gradient(#34D399 25%, #60A5FA 0 50%, #F59E0B 0 75%, #EF4444 0)' }} />
-                      <p style={{ fontSize: '20px', fontWeight: 800, color: '#111827', margin: 0 }}>35</p>
+                      <p style={{ fontSize: '20px', fontWeight: 800, color: '#111827', margin: 0 }}>{currentJournal.metrics?.altmetric || 35}</p>
                     </div>
                     <span style={{ fontSize: '10px', color: '#9CA3AF', marginTop: '2px' }}>Altmetric Score</span>
                   </div>
@@ -1905,27 +1730,14 @@ const JournalDetails = () => {
                     <p style={{ fontSize: '12px', color: '#1E40AF', margin: 0 }}>Your article will be moved to the next stage for publication.</p>
                   </div>
                 </div>
-                <button onClick={() => setActiveSubTab('Communication')} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fff', border: '1.5px solid #2563EB', color: '#2563EB', padding: '10px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 6px rgba(37,99,235,0.1)' }}>
-                  Next: Communication <FiArrowRight size={14} />
+                <button onClick={() => setActiveSubTab('Publication Details')} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fff', border: '1.5px solid #2563EB', color: '#2563EB', padding: '10px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 6px rgba(37,99,235,0.1)' }}>
+                  Next: Publication Details <FiArrowRight size={14} />
                 </button>
               </div>
             </>
           )}
 
-          {activeSubTab === 'Communication' && (
-            <>
-              {/* Bottom alert & flow step */}
-              <div style={{ borderRadius: '12px', border: '1px solid #DBEAFE', background: '#EFF6FF', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', flexWrap: 'wrap', gap: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <FiInfo size={16} color="#2563EB" />
-                  <span style={{ fontSize: '12.5px', color: '#1E40AF' }}>All communications are secure and will be recorded for editorial purposes.</span>
-                </div>
-                <button onClick={() => setActiveSubTab('Publication Details')} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#2563EB', border: 'none', color: '#fff', padding: '10px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 10px rgba(37,99,235,0.3)' }}>
-                  Next: Publication <FiArrowRight size={14} />
-                </button>
-              </div>
-            </>
-          )}
+
 
           {activeSubTab === 'Publication Details' && (
             <>
@@ -1937,7 +1749,7 @@ const JournalDetails = () => {
             </>
           )}
 
-          {activeSubTab !== 'Publication Details' && activeSubTab !== 'Article Information' && activeSubTab !== 'Review & Decision' && activeSubTab !== 'Communication' && activeSubTab !== 'Download & Share' && (
+          {activeSubTab !== 'Publication Details' && activeSubTab !== 'Article Information' && activeSubTab !== 'Review & Decision' && activeSubTab !== 'Citations & Metrics' && activeSubTab !== 'Download & Share' && (
             <div style={{ ...cardStyle, padding: '36px', textAlign: 'center', color: '#9CA3AF' }}>
               <FiLayers size={36} style={{ marginBottom: '10px' }} />
               <p style={{ margin: 0, fontSize: '14px' }}>{activeSubTab} content is loading...</p>
@@ -1948,7 +1760,7 @@ const JournalDetails = () => {
       )}
 
       {/* Non-summary Tab Placeholders */}
-      {activeTab !== 'Summary' && activeTab !== 'Review History' && activeTab !== 'Communication' && activeTab !== 'Decision' && activeTab !== 'Publication' && (
+      {activeTab !== 'Summary' && activeTab !== 'Review History' && activeTab !== 'Decision' && activeTab !== 'Publication' && (
         <div style={{ ...cardStyle, padding: '36px', textAlign: 'center', color: '#9CA3AF' }}>
           <FiLayers size={36} style={{ marginBottom: '10px' }} />
           <p style={{ margin: 0, fontSize: '14px' }}>{activeTab} details are loading...</p>
@@ -1964,6 +1776,61 @@ const JournalDetails = () => {
               ? 'Your article has been accepted and will be published soon.'
               : 'Thank you for contributing to the research community. Your work has been successfully published. 🎉'}
           </p>
+        </div>
+      )}
+
+      {/* ARTICLE PREVIEW MODAL */}
+      {showArticleModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(17, 24, 39, 0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={() => setShowArticleModal(false)}>
+          <div style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', padding: '32px', position: 'relative', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }} onClick={e => e.stopPropagation()}>
+            
+            <button onClick={() => setShowArticleModal(false)} style={{ position: 'absolute', top: '20px', right: '20px', background: '#F3F4F6', border: 'none', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#4B5563', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#E5E7EB'} onMouseLeave={e => e.currentTarget.style.background = '#F3F4F6'}>
+              <FiXCircle size={18} />
+            </button>
+            
+            <div style={{ textAlign: 'center', borderBottom: '2px solid #F3F4F6', paddingBottom: '24px', marginBottom: '24px' }}>
+              <span style={{ background: '#EFF6FF', color: '#2563EB', padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, display: 'inline-block', marginBottom: '12px' }}>{currentJournal.category || 'Research Article'}</span>
+              <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#111827', fontFamily: 'Poppins, sans-serif', margin: '0 0 12px', lineHeight: 1.4 }}>{currentJournal.title || 'Untitled Journal Article'}</h2>
+              <div style={{ fontSize: '15px', color: '#4B5563', fontWeight: 600, margin: '0 0 16px' }}>
+                {currentJournal.primaryAuthorName || currentJournal.primaryAuthor || 'Unknown Author'}
+                {currentJournal.coAuthors?.length > 0 && `, ${currentJournal.coAuthors.join(', ')}`}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', fontSize: '13px', color: '#6B7280' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><FiCalendar size={14} /> Submitted: {currentJournal.date}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><FiBookOpen size={14} /> {currentJournal.dept || 'General'}</span>
+                {currentJournal.doi && <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><FiLink size={14} /> DOI: {currentJournal.doi}</span>}
+              </div>
+            </div>
+
+            <div style={{ background: '#F8FAFC', borderRadius: '12px', padding: '24px', marginBottom: '24px', border: '1px solid #E2E8F0' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1E293B', margin: '0 0 12px', fontFamily: 'Poppins, sans-serif' }}>Abstract</h3>
+              <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.7, margin: 0 }}>
+                {currentJournal.abstract || 'No abstract is provided for this submission.'}
+              </p>
+            </div>
+
+            <div>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1E293B', margin: '0 0 12px', fontFamily: 'Poppins, sans-serif' }}>Keywords</h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {(currentJournal.keywords && currentJournal.keywords.length > 0 ? currentJournal.keywords : ['Research', 'Journal']).map(kw => (
+                  <span key={kw} style={{ background: '#F1F5F9', color: '#475569', padding: '6px 14px', borderRadius: '6px', fontSize: '12.5px', fontWeight: 600, border: '1px solid #E2E8F0' }}>{kw}</span>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '32px' }}>
+              <button onClick={() => {
+                if (currentJournal.mainFilePath) {
+                  window.open(`http://localhost:5000/${currentJournal.mainFilePath.replace(/\\/g, '/')}`, '_blank');
+                } else {
+                  toast.error('File not found');
+                }
+              }} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#2563EB', border: 'none', color: '#fff', padding: '12px 24px', borderRadius: '8px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 12px rgba(37,99,235,0.2)' }}>
+                <FiDownload size={16} /> Download Original File
+              </button>
+            </div>
+
+          </div>
         </div>
       )}
 

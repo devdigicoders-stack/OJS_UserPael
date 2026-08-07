@@ -31,47 +31,166 @@ const initialProfile = {
 };
 
 export const JournalProvider = ({ children }) => {
-  const [journals, setJournals] = useState(() => {
-    const saved = localStorage.getItem('ojs_journals');
-    return saved ? JSON.parse(saved) : initialJournals;
+  const [journals, setJournals] = useState([]);
+  const [profile, setProfile] = useState({
+    name: '',
+    email: '',
+    avatar: '',
+    designation: '',
+    institution: '',
   });
+  const [userStats, setUserStats] = useState(null);
 
   const [activities, setActivities] = useState(() => {
     const saved = localStorage.getItem('ojs_activities');
-    return saved ? JSON.parse(saved) : initialActivities;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Filter out dummy initial activities
+      const realActivities = parsed.filter(a => !a.text.includes("A Novel Approach to AI in Healthcare") && !a.text.includes("Blockchain Technology") && !a.text.includes("Impact of Social Media") && !a.text.includes("Sustainable Energy") && !a.text.includes("Deep Learning Applications"));
+      return realActivities;
+    }
+    return [];
   });
 
-  const [profile, setProfile] = useState(() => {
-    const saved = localStorage.getItem('ojs_profile');
-    return saved ? JSON.parse(saved) : initialProfile;
-  });
-
-  // Save to localStorage whenever state changes
   useEffect(() => {
-    localStorage.setItem('ojs_journals', JSON.stringify(journals));
-  }, [journals]);
+    fetchProfile();
+    fetchMyJournals();
+    fetchUserStats();
+  }, []);
+
+  const fetchUserStats = async () => {
+    try {
+      const token = localStorage.getItem('userToken');
+      if (!token) return;
+      
+      const res = await fetch('http://localhost:5000/api/journals/my-stats', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUserStats(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user stats', error);
+    }
+  };
+
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem('userToken');
+      if (!token) return;
+      
+      const res = await fetch('http://localhost:5000/api/auth/user/profile', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setProfile({
+          name: data.name || '',
+          email: data.email || '',
+          avatar: data.initials || data.name?.substring(0, 2).toUpperCase() || 'US',
+          designation: data.designation || '',
+          institution: data.institution || '',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch profile', error);
+    }
+  };
+
+  const fetchMyJournals = async () => {
+    try {
+      const token = localStorage.getItem('userToken');
+      if (!token) return;
+
+      const res = await fetch('http://localhost:5000/api/journals/my-submissions', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Format to match UI
+        const formatted = data.map(j => ({
+          id: j.journalId || j._id?.toString() || 'N/A',
+          title: j.title || 'Untitled',
+          dept: j.department || 'General',
+          category: j.keywords?.[0] || 'General',
+          date: new Date(j.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+          status: j.status || 'Pending Review',
+          abstract: j.abstract,
+          primaryAuthor: j.primaryAuthorName,
+          keywords: j.keywords || [],
+          pages: j.pages,
+          doi: j.doi,
+          volume: j.volume,
+          issue: j.issue,
+          views: j.views || 0,
+          downloads: j.downloads || 0,
+          citations: j.citations || 0,
+          impactFactor: j.impactFactor || 0,
+          mainFilePath: j.mainFilePath,
+          publishDate: j.publishDate ? new Date(j.publishDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : null
+        }));
+        setJournals(formatted);
+      }
+    } catch (error) {
+      console.error('Failed to fetch journals', error);
+    }
+  };
 
   useEffect(() => {
     localStorage.setItem('ojs_activities', JSON.stringify(activities));
   }, [activities]);
 
-  useEffect(() => {
-    localStorage.setItem('ojs_profile', JSON.stringify(profile));
-  }, [profile]);
+  const addJournal = async (journalData, mainFile) => {
+    try {
+      const token = localStorage.getItem('userToken');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
 
-  // Actions
-  const addJournal = (journalData) => {
-    const newJournal = {
-      id: `JNL-${1000 + journals.length + 1}`,
-      title: journalData.title || 'Untitled Journal',
-      dept: journalData.department || 'General',
-      category: journalData.category || 'General',
-      date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-      status: 'Processing',
-      ...journalData
-    };
-    setJournals([newJournal, ...journals]);
-    addActivity(`You submitted a new journal: "${newJournal.title}"`, 'success');
+      const formData = new FormData();
+      formData.append('title', journalData.title);
+      formData.append('abstract', journalData.abstract);
+      formData.append('department', journalData.department);
+      formData.append('researchArea', journalData.researchArea);
+      formData.append('keywords', JSON.stringify(journalData.keywords || []));
+      formData.append('pages', journalData.pages);
+      formData.append('primaryAuthorName', journalData.primaryAuthor);
+      formData.append('email', journalData.email);
+      formData.append('phone', journalData.phone);
+      formData.append('phoneCode', journalData.phoneCode);
+      formData.append('coAuthors', journalData.coAuthors);
+      formData.append('isSameAuthor', journalData.isSameAuthor);
+      
+      if (mainFile) {
+        formData.append('mainFile', mainFile);
+      }
+
+      const res = await fetch('http://localhost:5000/api/journals/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to upload journal');
+      }
+
+      const newJournal = await res.json();
+      
+      addActivity(`You submitted a new journal: "${newJournal.title}"`, 'success');
+      
+      // Refresh the list from backend
+      fetchMyJournals();
+      
+      return true; // Indicate success to the caller
+    } catch (error) {
+      console.error('Error adding journal:', error);
+      throw error;
+    }
   };
 
   const updateJournalStatus = (id, newStatus) => {
@@ -99,6 +218,7 @@ export const JournalProvider = ({ children }) => {
       journals,
       activities,
       profile,
+      userStats,
       addJournal,
       updateJournalStatus,
       addActivity,

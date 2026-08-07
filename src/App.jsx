@@ -18,6 +18,7 @@ import TrackStatus from './pages/TrackStatus';
 import JournalFiles from './pages/JournalFiles';
 
 import { JournalProvider } from './context/JournalContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -29,9 +30,10 @@ function App() {
         <Route path="/register" element={<Register />} />
         
         {/* Dashboard Routes with Layout */}
-        <Route path="/dashboard" element={<DashboardLayout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="upload-journal" element={<UploadJournal />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<DashboardLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="upload-journal" element={<UploadJournal />} />
           <Route path="journal-status" element={<JournalStatus />} />
           <Route path="journal-details" element={<JournalDetails />} />
           <Route path="journal-details/:id" element={<JournalDetails />} />
@@ -45,6 +47,7 @@ function App() {
           <Route path="rejected" element={<RejectedJournals />} />
           <Route path="profile" element={<Profile />} />
           <Route path="change-password" element={<ChangePassword />} />
+          </Route>
         </Route>
         
         {/* Catch all */}

@@ -145,7 +145,7 @@ const JournalFiles = () => {
             <FiChevronRight size={13} />
             <Link to="/dashboard/journal-status" style={{ color: '#6B7280', textDecoration: 'none', fontWeight: 500 }}>My Journals</Link>
             <FiChevronRight size={13} />
-            <Link to="/dashboard/journal-details" style={{ color: '#6B7280', textDecoration: 'none', fontWeight: 500 }}>Journal Details</Link>
+            <Link to={`/dashboard/journal-details/${currentJournal.id}`} style={{ color: '#6B7280', textDecoration: 'none', fontWeight: 500 }}>Journal Details</Link>
             <FiChevronRight size={13} />
             <span style={{ color: '#2563EB', fontWeight: 600 }}>Files</span>
           </div>
@@ -153,7 +153,7 @@ const JournalFiles = () => {
           <p style={{ fontSize: '13px', color: '#6B7280', margin: 0 }}>View and manage all files submitted with your journal.</p>
         </div>
         <button
-          onClick={() => navigate('/dashboard/journal-details')}
+          onClick={() => navigate(`/dashboard/journal-details/${currentJournal.id}`)}
           style={{
             display: 'flex', alignItems: 'center', gap: '6px',
             background: '#fff', border: '1.5px solid #E5E7EB',

@@ -285,7 +285,7 @@ const Dashboard = () => {
                         </td>
                         <td style={{ padding: '12px 16px' }}>
                           <CustomActionTooltip text="View Details">
-                            <Link to="/dashboard/journal-details" style={{ color: '#2563EB', display: 'flex' }}><FiEye size={16} /></Link>
+                            <Link to={`/dashboard/journal-details/${j.id}`} style={{ color: '#2563EB', display: 'flex' }}><FiEye size={16} /></Link>
                           </CustomActionTooltip>
                         </td>
                       </tr>

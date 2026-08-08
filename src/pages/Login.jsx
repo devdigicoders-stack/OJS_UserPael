@@ -127,10 +127,8 @@ const Login = () => {
         {/* Logo & Welcome */}
         <div style={{ position: 'relative', zIndex: 1 }}>
           {/* Brand/Logo Area */}
-          <div style={{ marginBottom: '25px', textAlign: 'center' }}>
-            <div className="bg-white p-2 rounded-lg inline-block shadow-sm">
-              <img src={logo} alt="Praxis Logo" className="h-12 object-contain" />
-            </div>
+          <div style={{ marginBottom: '25px', textAlign: 'left' }}>
+            <img src={logo} alt="Praxis Logo" className="h-20 object-contain" />
           </div>
 
           <h1 style={{ fontSize: '32px', fontWeight: 800, fontFamily: 'Poppins, sans-serif', lineHeight: 1.25, marginBottom: '12px' }}>

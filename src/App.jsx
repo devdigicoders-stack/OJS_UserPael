@@ -17,6 +17,11 @@ import JournalDetails from './pages/JournalDetails';
 import TrackStatus from './pages/TrackStatus';
 import JournalFiles from './pages/JournalFiles';
 
+// Reviewer Pages
+import ReviewerDashboard from './pages/reviewer/ReviewerDashboard';
+import ReviewerJournals from './pages/reviewer/ReviewerJournals';
+import Notifications from './pages/reviewer/Notifications';
+
 import { JournalProvider } from './context/JournalContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -32,7 +37,11 @@ function App() {
         {/* Dashboard Routes with Layout */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardLayout />}>
-            <Route index element={<Dashboard />} />
+            <Route index element={
+              JSON.parse(localStorage.getItem('userProfile') || '{}')?.role === 'Reviewer' 
+                ? <ReviewerDashboard /> 
+                : <Dashboard />
+            } />
             <Route path="upload-journal" element={<UploadJournal />} />
           <Route path="journal-status" element={<JournalStatus />} />
           <Route path="journal-details" element={<JournalDetails />} />
@@ -45,6 +54,16 @@ function App() {
           <Route path="history/:id" element={<JournalHistory />} />
           <Route path="approved" element={<ApprovedJournals />} />
           <Route path="rejected" element={<RejectedJournals />} />
+
+          {/* Reviewer Routes */}
+          <Route path="reviewer/dashboard" element={<ReviewerDashboard />} />
+          <Route path="reviewer/assignments" element={<ReviewerJournals title="My Assignments" statusFilter="all" />} />
+          <Route path="reviewer/pending" element={<ReviewerJournals title="Pending Reviews" statusFilter="pending" />} />
+          <Route path="reviewer/in-review" element={<ReviewerJournals title="In Review" statusFilter="in-review" />} />
+          <Route path="reviewer/completed" element={<ReviewerJournals title="Completed Reviews" statusFilter="completed" />} />
+          <Route path="reviewer/history" element={<ReviewerJournals title="Review History" statusFilter="completed" />} />
+          <Route path="reviewer/notifications" element={<Notifications />} />
+
           <Route path="profile" element={<Profile />} />
           <Route path="change-password" element={<ChangePassword />} />
           </Route>

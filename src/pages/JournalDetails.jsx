@@ -528,7 +528,7 @@ const JournalDetails = () => {
       {/* ── Tabs Bar ── */}
       <div style={{ borderBottom: '1px solid #E5E7EB', display: 'flex', gap: '16px', paddingLeft: '4px' }}>
         <span onClick={() => setActiveTab('Summary')} style={tabItemStyle('Summary')}>Summary</span>
-        <span onClick={() => navigate('/dashboard/journal-files')} style={tabItemStyle('Files')}>Files</span>
+        <span onClick={() => navigate(`/dashboard/journal-files/${currentJournal.id}`)} style={tabItemStyle('Files')}>Files</span>
         <span onClick={() => setActiveTab('Review History')} style={tabItemStyle('Review History')}>Review History</span>
         {/* <span onClick={() => setActiveTab('Decision')} style={tabItemStyle('Decision')}>Decision Letter</span> */}
         <span onClick={() => setActiveTab('Publication')} style={tabItemStyle('Publication')}>Publication</span>

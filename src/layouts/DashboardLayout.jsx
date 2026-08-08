@@ -9,7 +9,10 @@ import Swal from 'sweetalert2';
 import { useJournalContext } from '../context/JournalContext';
 import logo from '../assets/logo.png';
 
-const menuItems = [
+const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+const isReviewer = userProfile?.role === 'Reviewer';
+
+const authorMenuItems = [
   { path: '/dashboard', name: 'Dashboard', icon: FiHome },
   { path: '/dashboard/upload-journal', name: 'Upload Journal', icon: FiUploadCloud },
   { path: '/dashboard/journal-status', name: 'My Journals', icon: FiBook },
@@ -17,6 +20,18 @@ const menuItems = [
   { path: '/dashboard/approved', name: 'Approved Journals', icon: FiCheckCircle },
   { path: '/dashboard/rejected', name: 'Rejected Journals', icon: FiXCircle },
 ];
+
+const reviewerMenuItems = [
+  { path: '/dashboard', name: 'Dashboard', icon: FiHome },
+  { path: '/dashboard/reviewer/assignments', name: 'My Assignments', icon: FiBook },
+  { path: '/dashboard/reviewer/pending', name: 'Pending Reviews', icon: FiClipboard },
+  { path: '/dashboard/reviewer/in-review', name: 'In Review', icon: FiUploadCloud },
+  { path: '/dashboard/reviewer/completed', name: 'Completed Reviews', icon: FiCheckCircle },
+  { path: '/dashboard/reviewer/history', name: 'Review History', icon: FiClipboard },
+  { path: '/dashboard/reviewer/notifications', name: 'Notifications', icon: FiBell },
+];
+
+const menuItems = isReviewer ? reviewerMenuItems : authorMenuItems;
 
 const bottomItems = [
   { path: '/dashboard/profile', name: 'My Profile', icon: FiUser },

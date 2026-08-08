@@ -16,7 +16,7 @@ const JournalDetails = () => {
   const { id } = useParams();
   const { journals } = useJournalContext();
   const currentJournal = journals.find(j => j.id === id) || journals[0] || {
-    id: 'OJS-2024-0512', title: 'A Novel Approach to AI in Healthcare',
+    id: 'PRAXIS-2024-0512', title: 'A Novel Approach to AI in Healthcare',
     dept: 'Computer Science', primaryAuthor: 'Dr. Rahul Sharma',
     status: 'Published', date: '12 May 2024'
   };
@@ -33,16 +33,7 @@ const JournalDetails = () => {
 
   const forceDownload = async (fileUrl, fileName) => {
     try {
-      const response = await fetch(fileUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      window.open(fileUrl, '_blank');
     } catch (err) {
       toast.error('Failed to download file');
     }
@@ -188,7 +179,7 @@ const JournalDetails = () => {
         date: currentJournal.date || '20 May',
         preview: 'Your article has been published successfully.',
         title: 'Congratulations: Article Published',
-        body: `Dear ${currentJournal.primaryAuthorName || currentJournal.primaryAuthor || 'Author'},\n\nWe are pleased to inform you that your article "${currentJournal.title || 'Untitled'}" has been published successfully in Volume ${currentJournal.volume || 15}, Issue ${currentJournal.issue || 2} of ${currentJournal.category || currentJournal.journalName || 'OJS Journal'}.\n\nThank you for your valuable contribution.\n\nBest regards,\nEditorial Team`,
+        body: `Dear ${currentJournal.primaryAuthorName || currentJournal.primaryAuthor || 'Author'},\n\nWe are pleased to inform you that your article "${currentJournal.title || 'Untitled'}" has been published successfully in Volume ${currentJournal.volume || 15}, Issue ${currentJournal.issue || 2} of ${currentJournal.category || currentJournal.journalName || 'Praxis Journal'}.\n\nThank you for your valuable contribution.\n\nBest regards,\nEditorial Team`,
         time: '11:20 AM'
       });
     } else if (currentJournal.status === 'Approved') {
@@ -593,7 +584,7 @@ const JournalDetails = () => {
               <p style={detailValStyle}>{currentJournal.coAuthors?.length > 0 ? currentJournal.coAuthors.join(', ') : 'None'}</p>
 
               <p style={detailLabelStyle}>Journal/Conference</p>
-              <p style={detailValStyle}>{currentJournal.category || currentJournal.journalName || 'OJS Journal'}</p>
+              <p style={detailValStyle}>{currentJournal.category || currentJournal.journalName || 'Praxis Journal'}</p>
 
               <p style={detailLabelStyle}>DOI</p>
               <p style={{ ...detailValStyle, display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -602,7 +593,7 @@ const JournalDetails = () => {
               </p>
 
               <p style={detailLabelStyle}>Publisher</p>
-              <p style={{ ...detailValStyle, marginBottom: 0 }}>{currentJournal.publisher || 'OJS Publications'}</p>
+              <p style={{ ...detailValStyle, marginBottom: 0 }}>{currentJournal.publisher || 'Praxis Publications'}</p>
             </div>
           </div>
 
@@ -625,6 +616,21 @@ const JournalDetails = () => {
               <FiPrinter size={14} color="#2563EB" /> Print Article
             </button>
           </div>
+
+          {/* Additional Files Box */}
+          {currentJournal.additionalFilePaths && currentJournal.additionalFilePaths.length > 0 && (
+            <div style={{ ...cardStyle, padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#111827', margin: '0 0 6px', fontFamily: 'Poppins, sans-serif' }}>Additional Files</h4>
+              {currentJournal.additionalFilePaths.map((path, idx) => {
+                const fileName = path.split('\\').pop().split('/').pop();
+                return (
+                  <button key={idx} onClick={() => window.open(`${import.meta.env.VITE_API_URL.replace('/api', '')}/${path.replace(/\\/g, '/')}`, '_blank')} style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
+                    <FiPaperclip size={14} color="#2563EB" /> {fileName.length > 20 ? fileName.substring(0, 20) + '...' : fileName}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
         </div>
       )}
@@ -962,7 +968,7 @@ const JournalDetails = () => {
                 <div style={{ fontSize: '13px', color: '#334155', lineHeight: 1.8, display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <p style={{ fontWeight: 'bold' }}>Dear {currentJournal.primaryAuthorName || currentJournal.primaryAuthor || 'Author'},</p>
                   <p>
-                    We are pleased to inform you that your manuscript entitled <span style={{ fontWeight: 'bold' }}>"{currentJournal.title || 'Untitled'}"</span> has been accepted for publication in <span style={{ fontStyle: 'italic' }}>{currentJournal.category || currentJournal.journalName || 'OJS Journal'}</span>, Volume {currentJournal.volume || 15}, Issue {currentJournal.issue || 2}.
+                    We are pleased to inform you that your manuscript entitled <span style={{ fontWeight: 'bold' }}>"{currentJournal.title || 'Untitled'}"</span> has been accepted for publication in <span style={{ fontStyle: 'italic' }}>{currentJournal.category || currentJournal.journalName || 'Praxis Journal'}</span>, Volume {currentJournal.volume || 15}, Issue {currentJournal.issue || 2}.
                   </p>
                   <p>
                     The reviews submitted for your manuscript indicate its originality, contribution to the research area, and clear presentation. We thank you for your valuable contribution to the journal and we look forward to your continued support in the future.
@@ -1100,7 +1106,7 @@ const JournalDetails = () => {
 
                     <div style={{ display: 'flex', borderBottom: '1px solid #F3F4F6', paddingBottom: '10px', alignItems: 'flex-start' }}>
                       <span style={{ color: '#6B7280', width: '120px', fontWeight: 500, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px' }}><FiBookOpen size={13} /> Journal Name</span>
-                      <span style={{ color: '#111827', fontWeight: 600, flex: 1 }}>{currentJournal.category || currentJournal.journalName || 'OJS Journal'}</span>
+                      <span style={{ color: '#111827', fontWeight: 600, flex: 1 }}>{currentJournal.category || currentJournal.journalName || 'Praxis Journal'}</span>
                     </div>
 
                     <div style={{ display: 'flex', borderBottom: '1px solid #F3F4F6', paddingBottom: '10px', alignItems: 'flex-start' }}>
@@ -1271,7 +1277,7 @@ const JournalDetails = () => {
 
                   <div style={{ display: 'flex', borderBottom: '1px solid #F3F4F6', paddingBottom: '10px' }}>
                     <span style={{ color: '#6B7280', width: '120px', fontWeight: 500, flexShrink: 0 }}>Journal</span>
-                    <span style={{ color: '#111827', fontWeight: 600 }}>{currentJournal.category || currentJournal.journalName || 'OJS Journal'}</span>
+                    <span style={{ color: '#111827', fontWeight: 600 }}>{currentJournal.category || currentJournal.journalName || 'Praxis Journal'}</span>
                   </div>
 
                   <div style={{ display: 'flex', borderBottom: '1px solid #F3F4F6', paddingBottom: '10px' }}>

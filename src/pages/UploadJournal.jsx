@@ -37,11 +37,13 @@ const UploadJournal = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const addFileInputRef = useRef(null);
+  const imageInputRef = useRef(null);
   const { addJournal } = useJournalContext();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [dragging, setDragging] = useState(false);
   const [mainFile, setMainFile] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
   const [additionalFiles, setAdditionalFiles] = useState([]);
 
   // ── Form State ──
@@ -88,11 +90,19 @@ const UploadJournal = () => {
     toast.success(`"${file.name}" uploaded successfully!`);
   };
 
+  const handleImageFile = (file) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowed.includes(file.type)) { toast.error('Only JPEG, PNG, or WEBP images allowed!'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error('File size must be under 5MB!'); return; }
+    setImageFile(file);
+    toast.success(`"${file.name}" uploaded as thumbnail!`);
+  };
+
   const handleAddFile = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const sizeMB = (file.size / 1024 / 1024).toFixed(2);
-    setAdditionalFiles(prev => [...prev, { name: file.name, size: `${sizeMB} MB` }]);
+    setAdditionalFiles(prev => [...prev, { file, name: file.name, size: `${sizeMB} MB` }]);
     toast.success(`"${file.name}" added!`);
   };
 
@@ -161,7 +171,7 @@ const UploadJournal = () => {
           await addJournal({
             ...formData,
             keywords
-          }, mainFile);
+          }, mainFile, imageFile, additionalFiles.map(af => af.file));
           toast.success('Journal submitted successfully!');
           setCurrentStep(4);
           window.scrollTo(0, 0);
@@ -174,6 +184,7 @@ const UploadJournal = () => {
 
   const resetForm = () => {
     setMainFile(null);
+    setImageFile(null);
     setAdditionalFiles([]);
     setKeywords([]);
     setFormData({
@@ -336,6 +347,51 @@ const UploadJournal = () => {
                         </>
                       )}
                       <p style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '4px' }}>Supported Formats: PDF, DOCX &nbsp;|&nbsp; Max File Size: 25MB</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Cover Image Upload Card */}
+                <div style={{ ...cardStyle, padding: '22px 24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', marginBottom: '18px' }}>
+                    <div style={{ background: '#FDF4FF', borderRadius: '10px', padding: '10px', display: 'flex', flexShrink: 0 }}>
+                      <FiUploadCloud size={20} color="#C026D3" />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#111827', fontFamily: 'Poppins, sans-serif', margin: 0 }}>Step 1b: Upload Cover Image</h3>
+                      <p style={{ fontSize: '13px', color: '#6B7280', margin: '4px 0 0', lineHeight: 1.5 }}>
+                        Upload a thumbnail/cover image for your journal. This will be displayed on the website.
+                      </p>
+                    </div>
+                  </div>
+                  <div
+                    onClick={() => imageInputRef.current?.click()}
+                    style={{
+                      border: `2px dashed ${imageFile ? '#22C55E' : '#F5D0FE'}`,
+                      borderRadius: '12px', background: imageFile ? '#F0FDF4' : '#FDF4FF',
+                      padding: '36px 24px', textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s',
+                    }}
+                  >
+                    <input ref={imageInputRef} type="file" accept="image/jpeg, image/png, image/webp" style={{ display: 'none' }} onChange={(e) => e.target.files[0] && handleImageFile(e.target.files[0])} />
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ background: imageFile ? '#DCFCE7' : '#FAE8FF', borderRadius: '50%', padding: '16px', display: 'flex' }}>
+                        <FiUploadCloud size={32} color={imageFile ? '#16A34A' : '#C026D3'} />
+                      </div>
+                      {imageFile ? (
+                        <>
+                          <p style={{ fontWeight: 700, fontSize: '14px', color: '#16A34A' }}>✓ {imageFile.name}</p>
+                          <p style={{ fontSize: '12px', color: '#6B7280' }}>{(imageFile.size / 1024 / 1024).toFixed(2)} MB — Click to replace</p>
+                        </>
+                      ) : (
+                        <>
+                          <p style={{ fontWeight: 600, fontSize: '14px', color: '#374151' }}>Drag & Drop your image here</p>
+                          <p style={{ fontSize: '13px', color: '#9CA3AF' }}>or</p>
+                          <button type="button" style={{ display: 'flex', alignItems: 'center', gap: '7px', background: '#C026D3', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 22px', fontWeight: 600, fontSize: '13.5px', cursor: 'pointer', boxShadow: '0 3px 10px rgba(192,38,211,0.3)' }}>
+                            <FiPaperclip size={15} /> Browse Images
+                          </button>
+                        </>
+                      )}
+                      <p style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '4px' }}>Supported Formats: JPG, PNG, WEBP &nbsp;|&nbsp; Max File Size: 5MB</p>
                     </div>
                   </div>
                 </div>
@@ -729,7 +785,7 @@ const UploadJournal = () => {
                 </p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '8px' }}>
                   <div style={{ background: '#D1FAE5', color: '#065F46', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #A7F3D0' }}>
-                    Submission ID: OJS-2024-0512 <FiCopy size={13} style={{ cursor: 'pointer' }} onClick={() => toast.success('Copied!')} />
+                    Submission ID: PRAXIS-2024-0512 <FiCopy size={13} style={{ cursor: 'pointer' }} onClick={() => toast.success('Copied!')} />
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', color: '#6B7280' }}>
                     <FiCalendar size={14} /> Submitted on: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} | {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}

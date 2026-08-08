@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   FiMail, FiLock, FiEye, FiEyeOff,
@@ -6,6 +6,8 @@ import {
   FiBarChart2, FiGlobe, FiFileText, FiShield
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+import { useJournalContext } from '../context/JournalContext';
+import logo from '../assets/logo.png';
 
 const features = [
   { Icon: FiFileText, title: 'Easy Journal Submission', desc: 'Submit your research in a few simple steps.' },
@@ -15,10 +17,18 @@ const features = [
 
 const Login = () => {
   const navigate = useNavigate();
+  const { refreshData } = useJournalContext();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ email: '', password: '', remember: false });
+  const [form, setForm] = useState({ email: '', password: '', role: 'Author', remember: false });
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    const token = localStorage.getItem('userToken');
+    if (token && token !== 'undefined' && token !== 'null') {
+      navigate('/dashboard');
+    }
+  }, [navigate]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -44,7 +54,7 @@ const Login = () => {
       return;
     }
     setLoading(true);
-    
+
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/user/login`, {
         method: 'POST',
@@ -54,7 +64,7 @@ const Login = () => {
         body: JSON.stringify({
           email: form.email,
           password: form.password,
-          role: 'Author' // Defaulting to Author as per User Panel's primary use case
+          role: form.role
         }),
       });
 
@@ -64,7 +74,10 @@ const Login = () => {
         // Save token and user details
         localStorage.setItem('userToken', data.token);
         localStorage.setItem('userProfile', JSON.stringify(data.user));
-        
+
+        // Refresh context data now that token is available and wait for it
+        await refreshData();
+
         toast.success('Welcome back! Login successful.');
         navigate('/dashboard');
       } else {
@@ -113,19 +126,16 @@ const Login = () => {
 
         {/* Logo & Welcome */}
         <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '44px' }}>
-            <div style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: '12px', padding: '10px', display: 'flex' }}>
-              <FiBookOpen size={20} />
-            </div>
-            <div>
-              <p style={{ fontWeight: 700, fontSize: '16px', fontFamily: 'Poppins, sans-serif' }}>OJS Portal</p>
-              <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>Open Journal System</p>
+          {/* Brand/Logo Area */}
+          <div style={{ marginBottom: '25px', textAlign: 'center' }}>
+            <div className="bg-white p-2 rounded-lg inline-block shadow-sm">
+              <img src={logo} alt="Praxis Logo" className="h-12 object-contain" />
             </div>
           </div>
 
           <h1 style={{ fontSize: '32px', fontWeight: 800, fontFamily: 'Poppins, sans-serif', lineHeight: 1.25, marginBottom: '12px' }}>
             Welcome Back to<br />
-            <span style={{ color: '#fff' }}>OJS </span>
+            <span style={{ color: '#fff' }}>Praxis </span>
             <span style={{ color: '#60b4ff' }}>Portal</span>
           </h1>
           <div style={{ width: '44px', height: '4px', background: '#60b4ff', borderRadius: '4px', marginBottom: '16px' }} />
@@ -161,7 +171,7 @@ const Login = () => {
         {/* Back to Home */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '22px 28px' }}>
           <Link to="/" >
-            
+
           </Link>
         </div>
 
@@ -175,7 +185,7 @@ const Login = () => {
               </div>
               <div>
                 <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#111827', fontFamily: 'Poppins, sans-serif', margin: 0 }}>Sign In</h2>
-                <p style={{ fontSize: '13px', color: '#6B7280', margin: '3px 0 0' }}>Welcome back to OJS Portal</p>
+                <p style={{ fontSize: '13px', color: '#6B7280', margin: '3px 0 0' }}>Welcome back to Praxis</p>
               </div>
             </div>
 
@@ -201,9 +211,9 @@ const Login = () => {
                 <div style={{ marginBottom: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '7px' }}>
                     <label style={{ ...labelStyle, marginBottom: 0 }}>Password <span style={{ color: '#EF4444' }}>*</span></label>
-                    <a href="#" style={{ fontSize: '12.5px', color: '#2563EB', fontWeight: 600, textDecoration: 'none' }}>
+                    {/* <a href="#" style={{ fontSize: '12.5px', color: '#2563EB', fontWeight: 600, textDecoration: 'none' }}>
                       Forgot Password?
-                    </a>
+                    </a> */}
                   </div>
                   <div style={{ position: 'relative' }}>
                     <FiLock style={{ position: 'absolute', left: '13px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} size={16} />
@@ -223,6 +233,21 @@ const Login = () => {
                     </button>
                   </div>
                   {errors.password && <p style={{ color: '#EF4444', fontSize: '11.5px', marginTop: '5px' }}>{errors.password}</p>}
+                </div>
+
+                {/* Role Selection */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={labelStyle}>Role <span style={{ color: '#EF4444' }}>*</span></label>
+                  <select
+                    name="role"
+                    value={form.role}
+                    onChange={handleChange}
+                    style={{ ...inputStyle('role'), appearance: 'auto', cursor: 'pointer' }}
+                  >
+                    <option value="Author">Author</option>
+                    <option value="Reviewer">Reviewer</option>
+                    <option value="Editor">Editor</option>
+                  </select>
                 </div>
 
                 {/* Remember Me */}
@@ -266,7 +291,7 @@ const Login = () => {
                 {/* Divider */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
                   <div style={{ flex: 1, height: '1px', background: '#F3F4F6' }} />
-                  <span style={{ fontSize: '12px', color: '#9CA3AF', fontWeight: 500 }}>New to OJS Portal?</span>
+                  <span style={{ fontSize: '12px', color: '#9CA3AF', fontWeight: 500 }}>New to Praxis?</span>
                   <div style={{ flex: 1, height: '1px', background: '#F3F4F6' }} />
                 </div>
 

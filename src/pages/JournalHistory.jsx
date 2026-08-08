@@ -158,8 +158,8 @@ const JournalHistory = () => {
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           color: '#fff', border: '1px solid rgba(255,255,255,0.15)',
         }}>
-          <p style={{ fontWeight: 800, fontSize: '16px', margin: 0, letterSpacing: '1px' }}>OJS</p>
-          <p style={{ fontSize: '8px', color: 'rgba(255,255,255,0.7)', textAlign: 'center', margin: '4px 0', lineHeight: 1.4 }}>Open Journal Systems</p>
+          <p style={{ fontWeight: 800, fontSize: '16px', margin: 0, letterSpacing: '1px' }}>Praxis</p>
+          <p style={{ fontSize: '8px', color: 'rgba(255,255,255,0.7)', textAlign: 'center', margin: '4px 0', lineHeight: 1.4 }}>Journal of society, behaviour and institutions</p>
         </div>
 
         <div style={{ flex: 1, minWidth: '200px' }}>

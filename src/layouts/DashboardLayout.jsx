@@ -7,6 +7,7 @@ import {
 } from 'react-icons/fi';
 import Swal from 'sweetalert2';
 import { useJournalContext } from '../context/JournalContext';
+import logo from '../assets/logo.png';
 
 const menuItems = [
   { path: '/dashboard', name: 'Dashboard', icon: FiHome },
@@ -42,7 +43,12 @@ const DashboardLayout = () => {
       cancelButtonColor: '#d33',
       confirmButtonText: 'Yes, log me out!',
     }).then((result) => {
-      if (result.isConfirmed) navigate('/login');
+      if (result.isConfirmed) {
+        localStorage.removeItem('userToken');
+        localStorage.removeItem('userProfile');
+        localStorage.removeItem('ojs_activities');
+        window.location.href = '/login';
+      }
     });
   };
 
@@ -51,7 +57,7 @@ const DashboardLayout = () => {
   const { profile } = useJournalContext();
   const userName = profile?.name || 'Author';
   const userInitials = profile?.avatar || userName.substring(0, 2).toUpperCase() || 'US';
-  const userInstitution = profile?.institution || 'OJS Portal';
+  const userInstitution = profile?.institution || 'Praxis';
   const userDesignation = profile?.designation || 'Author';
 
   return (
@@ -77,21 +83,14 @@ const DashboardLayout = () => {
         transition: 'transform 0.3s',
       }}>
         {/* Logo */}
-        <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '10px', padding: '8px', display: 'flex' }}>
-            <FiBook size={18} color="#fff" />
+        <div style={{ padding: '5px 20px 20px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+          <div style={{ textAlign: 'center', display: 'flex', justifyContent: 'center' }}>
+            <img src={logo} alt="Praxis Logo" style={{ width: '100%', height: 'auto', maxHeight: '130px', objectFit: 'contain', display: 'inline-block' }} />
           </div>
-          <div>
-            <p style={{ fontWeight: 700, fontSize: '15px', color: '#fff', fontFamily: 'Poppins, sans-serif', lineHeight: 1.2 }}>OJS Portal</p>
-            <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>Open Journal System</p>
-          </div>
-          <button onClick={() => setSidebarOpen(false)} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: window.innerWidth < 1024 ? 'flex' : 'none' }}>
-            <FiX size={20} />
-          </button>
         </div>
 
         {/* Nav Items */}
-        <nav style={{ flex: 1, overflowY: 'auto', padding: '16px 12px' }}>
+        <nav className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '16px 12px' }}>
           {menuItems.map(({ path, name, icon: Icon }) => {
             const active = isActive(path);
             return (
@@ -142,7 +141,7 @@ const DashboardLayout = () => {
           })}
 
           <div style={{ margin: '16px 0', borderTop: '1px solid rgba(255,255,255,0.1)' }} />
-          
+
           <button
             onClick={handleLogout}
             style={{
@@ -186,29 +185,8 @@ const DashboardLayout = () => {
             <p style={{ fontSize: '11px', color: '#9CA3AF', margin: 0 }}>{userInstitution} | {userDesignation}</p>
           </div>
 
-          {/* Search */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            background: '#F9FAFB', border: '1px solid #E5E7EB',
-            borderRadius: '10px', padding: '8px 14px', minWidth: '220px',
-          }}>
-            <FiSearch size={15} color="#9CA3AF" />
-            <input
-              type="text" placeholder="Search anything..."
-              style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '13px', color: '#374151', flex: 1 }}
-            />
-            <span style={{ fontSize: '11px', color: '#D1D5DB', fontWeight: 500, whiteSpace: 'nowrap' }}>Ctrl + K</span>
-          </div>
-
           {/* Icons */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button 
-              onClick={() => toast.info('You have 2 pending tasks to review.')}
-              style={{ position: 'relative', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '10px', padding: '8px', cursor: 'pointer', display: 'flex' }}
-            >
-              <FiBell size={18} color="#6B7280" />
-              <span style={{ position: 'absolute', top: '6px', right: '6px', width: '8px', height: '8px', background: '#EF4444', borderRadius: '50%', border: '2px solid #fff' }} />
-            </button>
 
             {/* Profile */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 12px', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '12px', cursor: 'pointer' }}>
@@ -236,6 +214,8 @@ const DashboardLayout = () => {
           .lg-hide-hamburger { display: flex !important; }
         }
         * { box-sizing: border-box; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }

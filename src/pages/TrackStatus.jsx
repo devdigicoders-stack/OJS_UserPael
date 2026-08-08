@@ -14,7 +14,7 @@ const TrackStatus = () => {
   const { id } = useParams();
   const { journals } = useJournalContext();
   const currentJournal = journals.find(j => j.id === id) || journals[0] || {
-    id: 'OJS-2024-0512', title: 'A Novel Approach to AI in Healthcare',
+    id: 'PRAXIS-2024-0512', title: 'A Novel Approach to AI in Healthcare',
     dept: 'Computer Science', primaryAuthor: 'Dr. Rahul Sharma',
     status: 'Published', date: '12 May 2024'
   };
@@ -96,7 +96,7 @@ const TrackStatus = () => {
       <div style={{ ...cardStyle, padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
           <img
-            src={`https://picsum.photos/seed/${currentJournal.id}/160/140`}
+            src={currentJournal.image ? `${import.meta.env.VITE_API_URL.replace('/api', '')}/${currentJournal.image.replace(/\\/g, '/')}` : `https://picsum.photos/seed/${currentJournal.id}/160/140`}
             alt="journal-pic"
             style={{ width: '90px', height: '110px', borderRadius: '10px', objectFit: 'cover', border: '1px solid #E5E7EB', flexShrink: 0 }}
           />
@@ -357,9 +357,9 @@ const TrackStatus = () => {
             <p style={{ fontSize: '12px', color: '#15803D', margin: 0 }}>Thank you for contributing to the research community.</p>
           </div>
         </div>
-        <button style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fff', border: '1px solid #86EFAC', color: '#166534', padding: '8px 16px', borderRadius: '8px', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}>
+        <a href={`http://localhost:5175/journals/${currentJournal.id}`} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fff', border: '1px solid #86EFAC', color: '#166534', padding: '8px 16px', borderRadius: '8px', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none' }}>
           View Published Article <FiExternalLink size={13} />
-        </button>
+        </a>
       </div>
 
     </div>

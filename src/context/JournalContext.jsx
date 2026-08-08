@@ -52,10 +52,16 @@ export const JournalProvider = ({ children }) => {
     return [];
   });
 
+  const refreshData = async () => {
+    await Promise.all([
+      fetchProfile(),
+      fetchMyJournals(),
+      fetchUserStats()
+    ]);
+  };
+
   useEffect(() => {
-    fetchProfile();
-    fetchMyJournals();
-    fetchUserStats();
+    refreshData();
   }, []);
 
   const fetchUserStats = async () => {
@@ -128,6 +134,8 @@ export const JournalProvider = ({ children }) => {
           citations: j.citations || 0,
           impactFactor: j.impactFactor || 0,
           mainFilePath: j.mainFilePath,
+          image: j.image,
+          additionalFilePaths: j.additionalFilePaths || [],
           publishDate: j.publishDate ? new Date(j.publishDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : null
         }));
         setJournals(formatted);
@@ -141,7 +149,7 @@ export const JournalProvider = ({ children }) => {
     localStorage.setItem('ojs_activities', JSON.stringify(activities));
   }, [activities]);
 
-  const addJournal = async (journalData, mainFile) => {
+  const addJournal = async (journalData, mainFile, imageFile, additionalFiles = []) => {
     try {
       const token = localStorage.getItem('userToken');
       if (!token) {
@@ -164,6 +172,14 @@ export const JournalProvider = ({ children }) => {
       
       if (mainFile) {
         formData.append('mainFile', mainFile);
+      }
+      if (imageFile) {
+        formData.append('image', imageFile);
+      }
+      if (additionalFiles && additionalFiles.length > 0) {
+        additionalFiles.forEach(file => {
+          formData.append('additionalFiles', file);
+        });
       }
 
       const res = await fetch(`${import.meta.env.VITE_API_URL}/journals/upload`, {
@@ -219,6 +235,7 @@ export const JournalProvider = ({ children }) => {
       activities,
       profile,
       userStats,
+      refreshData,
       addJournal,
       updateJournalStatus,
       addActivity,

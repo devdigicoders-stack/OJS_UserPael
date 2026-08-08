@@ -40,6 +40,8 @@ const ApprovedJournals = () => {
     impactFactor: j.impactFactor || 0,
     abstract: j.abstract || 'Abstract not available.',
     keywords: j.keywords?.length ? j.keywords : ['Research', j.category],
+    mainFilePath: j.mainFilePath,
+    image: j.image,
     color: '#2563EB',
     abbr: j.category ? j.category.substring(0,3).toUpperCase() : 'JNL',
   }));
@@ -237,12 +239,18 @@ const ApprovedJournals = () => {
                 {/* Cover */}
                 <div style={{
                   width: '80px', height: '96px', borderRadius: '10px', flexShrink: 0,
-                  background: `linear-gradient(135deg, ${j.color}dd, ${j.color}88)`,
+                  background: j.image ? 'transparent' : `linear-gradient(135deg, ${j.color}dd, ${j.color}88)`,
                   display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  justifyContent: 'center', color: '#fff',
+                  justifyContent: 'center', color: '#fff', overflow: 'hidden'
                 }}>
-                  <p style={{ fontWeight: 800, fontSize: '14px', margin: 0, letterSpacing: '1px' }}>{j.abbr}</p>
-                  <FiBook size={22} style={{ marginTop: '8px', opacity: 0.7 }} />
+                  {j.image ? (
+                    <img src={`${import.meta.env.VITE_API_URL.replace('/api', '')}/${j.image.replace(/\\/g, '/')}`} alt="Cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <>
+                      <p style={{ fontWeight: 800, fontSize: '14px', margin: 0, letterSpacing: '1px' }}>{j.abbr}</p>
+                      <FiBook size={22} style={{ marginTop: '8px', opacity: 0.7 }} />
+                    </>
+                  )}
                 </div>
 
                 {/* Main Content */}
@@ -359,8 +367,23 @@ const ApprovedJournals = () => {
                     >
                       <FiExternalLink size={13} /> Open Article
                     </a>
-                    <button
-                      onClick={() => handleShare(j)}
+                      <button
+                      onClick={async () => {
+                        if (navigator.share) {
+                          try {
+                            await navigator.share({
+                              title: j.title,
+                              text: `Check out this article: ${j.title}`,
+                              url: `https://doi.org/${j.doi}`
+                            });
+                          } catch (error) {
+                            console.error('Error sharing:', error);
+                          }
+                        } else {
+                          navigator.clipboard.writeText(`https://doi.org/${j.doi}`);
+                          toast.success('Article link copied for sharing!');
+                        }
+                      }}
                       style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                         padding: '8px 12px', borderRadius: '8px',
@@ -370,17 +393,19 @@ const ApprovedJournals = () => {
                     >
                       <FiShare2 size={13} /> Share
                     </button>
-                    <button
-                      onClick={() => toast.info(`Downloading ${j.abbr} PDF...`)}
+                    <a
+                      href={j.mainFilePath ? `http://localhost:5000/${j.mainFilePath.replace(/\\/g, '/')}` : '#'}
+                      target="_blank"
+                      rel="noreferrer"
                       style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                         padding: '8px 12px', borderRadius: '8px',
                         border: '1.5px solid #E5E7EB', background: '#fff',
-                        color: '#374151', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer',
+                        color: '#374151', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none'
                       }}
                     >
                       <FiDownload size={13} /> Download PDF
-                    </button>
+                    </a>
                   </div>
                 </div>
               </div>
@@ -437,8 +462,23 @@ const ApprovedJournals = () => {
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <button onClick={() => setSelectedJournal(j)} style={{ background: '#EFF6FF', border: 'none', borderRadius: '7px', padding: '6px', cursor: 'pointer', color: '#2563EB', display: 'flex' }} title="View Details"><FiEye size={14} /></button>
                       <button onClick={() => copyDOI(j.doi, j.id)} style={{ background: '#F5F3FF', border: 'none', borderRadius: '7px', padding: '6px', cursor: 'pointer', color: '#7C3AED', display: 'flex' }} title="Copy DOI"><FiCopy size={14} /></button>
-                      <button onClick={() => handleShare(j)} style={{ background: '#ECFDF5', border: 'none', borderRadius: '7px', padding: '6px', cursor: 'pointer', color: '#059669', display: 'flex' }} title="Share"><FiShare2 size={14} /></button>
-                      <button onClick={() => toast.info('Downloading PDF...')} style={{ background: '#FEF3C7', border: 'none', borderRadius: '7px', padding: '6px', cursor: 'pointer', color: '#D97706', display: 'flex' }} title="Download PDF"><FiDownload size={14} /></button>
+                      <button onClick={async () => {
+                        if (navigator.share) {
+                          try {
+                            await navigator.share({
+                              title: j.title,
+                              text: `Check out this article: ${j.title}`,
+                              url: `https://doi.org/${j.doi}`
+                            });
+                          } catch (error) {
+                            console.error('Error sharing:', error);
+                          }
+                        } else {
+                          navigator.clipboard.writeText(`https://doi.org/${j.doi}`);
+                          toast.success('Article link copied for sharing!');
+                        }
+                      }} style={{ background: '#ECFDF5', border: 'none', borderRadius: '7px', padding: '6px', cursor: 'pointer', color: '#059669', display: 'flex' }} title="Share"><FiShare2 size={14} /></button>
+                      <a href={j.mainFilePath ? `http://localhost:5000/${j.mainFilePath.replace(/\\/g, '/')}` : '#'} target="_blank" rel="noreferrer" style={{ background: '#FEF3C7', border: 'none', borderRadius: '7px', padding: '6px', cursor: 'pointer', color: '#D97706', display: 'flex' }} title="Download PDF"><FiDownload size={14} /></a>
                     </div>
                   </td>
                 </tr>
@@ -560,22 +600,7 @@ const ApprovedJournals = () => {
                 ))}
               </div>
 
-              {/* Action buttons */}
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                <a href={`https://doi.org/${selectedJournal.doi}`} target="_blank" rel="noreferrer"
-                  style={{ flex: 1, minWidth: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', background: 'linear-gradient(135deg, #2563EB, #1D4ED8)', color: '#fff', fontWeight: 600, fontSize: '13px', textDecoration: 'none' }}>
-                  <FiExternalLink size={14} /> View Published Article
-                </a>
-                <button onClick={() => toast.info('Downloading PDF...')} style={{ flex: 1, minWidth: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '1.5px solid #E5E7EB', background: '#fff', fontWeight: 600, fontSize: '13px', cursor: 'pointer', color: '#374151' }}>
-                  <FiDownload size={14} /> Download PDF
-                </button>
-                <button onClick={() => handleShare(selectedJournal)} style={{ flex: 1, minWidth: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '1.5px solid #E5E7EB', background: '#fff', fontWeight: 600, fontSize: '13px', cursor: 'pointer', color: '#374151' }}>
-                  <FiShare2 size={14} /> Share Article
-                </button>
-                <button onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px 14px', borderRadius: '10px', border: '1.5px solid #E5E7EB', background: '#fff', fontWeight: 600, fontSize: '13px', cursor: 'pointer', color: '#374151' }}>
-                  <FiPrinter size={14} />
-                </button>
-              </div>
+              {/* Action buttons removed */}
             </div>
           </div>
         </div>

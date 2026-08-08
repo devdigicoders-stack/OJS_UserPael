@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   FiChevronRight, FiArrowLeft, FiCopy, FiCalendar, FiBookOpen,
@@ -32,16 +32,7 @@ const JournalFiles = () => {
 
   const forceDownload = async (fileUrl, fileName) => {
     try {
-      const response = await fetch(fileUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      window.open(fileUrl, '_blank');
     } catch (err) {
       toast.error('Failed to download file');
     }
@@ -70,8 +61,54 @@ const JournalFiles = () => {
     });
   }
 
+  let suppFiles = [];
+  if (currentJournal.additionalFilePaths && currentJournal.additionalFilePaths.length > 0) {
+    currentJournal.additionalFilePaths.forEach((path, idx) => {
+      const rawFileName = path.split('/').pop().split('\\').pop() || `Supplementary_File_${idx+1}`;
+      const ext = rawFileName.split('.').pop().toUpperCase();
+      suppFiles.push({
+        id: `supp-${idx}`,
+        name: rawFileName,
+        purpose: 'Supplementary',
+        tag: '',
+        type: ext,
+        date: `${currentJournal.date || 'Unknown'} \n 10:30 AM`,
+        size: 'Unknown',
+        uploadedBy: authorName,
+        iconColor: '#F3F4F6',
+        textColor: '#4B5563',
+        fileUrl: `${import.meta.env.VITE_API_URL.replace('/api', '')}/${path.replace(/\\/g, '/')}`
+      });
+    });
+  }
+  const allFiles = [...journalFiles, ...suppFiles];
+
   const [activeTab, setActiveTab] = useState('All Files');
   const [openDropdownId, setOpenDropdownId] = useState(null);
+  const [fileSizes, setFileSizes] = useState({});
+
+  useEffect(() => {
+    const fetchSizes = async () => {
+      const sizes = {};
+      for (const f of allFiles) {
+        try {
+          // Send a HEAD request to get headers without downloading the whole file
+          const res = await fetch(f.fileUrl, { method: 'HEAD' });
+          const contentLength = res.headers.get('content-length');
+          if (contentLength) {
+            sizes[f.id] = (parseInt(contentLength) / (1024 * 1024)).toFixed(2) + ' MB';
+          }
+        } catch (err) {
+          console.error('Failed to get size for', f.name, err);
+        }
+      }
+      setFileSizes(sizes);
+    };
+
+    if (allFiles.length > 0) {
+      fetchSizes();
+    }
+  }, [currentJournal.id]);
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
@@ -132,7 +169,7 @@ const JournalFiles = () => {
       {/* ── Upper Section (Journal Info Card) ── */}
       <div style={{ ...cardStyle, padding: '24px', display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
         <img
-          src="https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=160&auto=format&fit=crop&q=80"
+          src={currentJournal.image ? `${import.meta.env.VITE_API_URL.replace('/api', '')}/${currentJournal.image.replace(/\\/g, '/')}` : "https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=160&auto=format&fit=crop&q=80"}
           alt="journal-pic"
           style={{ width: '90px', height: '110px', borderRadius: '10px', objectFit: 'cover', border: '1px solid #E5E7EB', flexShrink: 0 }}
         />
@@ -181,100 +218,103 @@ const JournalFiles = () => {
           
           {/* Tabs */}
           <div style={{ borderBottom: '1px solid #E5E7EB', display: 'flex', gap: '16px' }}>
-            <span onClick={() => setActiveTab('All Files')} style={tabItemStyle('All Files')}>All Files ({journalFiles.length})</span>
-            <span onClick={() => setActiveTab('Supplementary Files')} style={tabItemStyle('Supplementary Files')}>Supplementary Files (0)</span>
+            <span onClick={() => setActiveTab('All Files')} style={tabItemStyle('All Files')}>All Files ({allFiles.length})</span>
+            <span onClick={() => setActiveTab('Supplementary Files')} style={tabItemStyle('Supplementary Files')}>Supplementary Files ({suppFiles.length})</span>
           </div>
 
-          {activeTab === 'All Files' ? (
-            <div style={{ ...cardStyle, overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                <thead>
-                  <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E5E7EB' }}>
-                    <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: 600, color: '#4B5563' }}>#</th>
-                    <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: 600, color: '#4B5563' }}>File Name</th>
-                    <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: 600, color: '#4B5563' }}>File Type</th>
-                    <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: 600, color: '#4B5563' }}>Uploaded On</th>
-                    <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: 600, color: '#4B5563' }}>Size</th>
-                    <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: 600, color: '#4B5563' }}>Uploaded By</th>
-                    <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: 600, color: '#4B5563', textAlign: 'center' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody style={{ fontSize: '12.5px', color: '#374151' }}>
-                  {journalFiles.map((f, idx) => (
-                    <tr key={f.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
-                      <td style={{ padding: '14px 16px', fontWeight: 600, color: '#6B7280' }}>{idx + 1}</td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                          <div style={{ background: f.iconColor, color: f.textColor, padding: '6px', borderRadius: '6px', fontWeight: 700, fontSize: '10px' }}>
-                            {f.type}
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ fontWeight: 700, color: '#111827', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                              {f.name}
-                              {f.tag && <span style={{ background: '#DCFCE7', color: '#15803D', fontSize: '9.5px', padding: '1px 6px', borderRadius: '4px' }}>{f.tag}</span>}
-                            </span>
-                            <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{f.purpose}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <span style={{ background: '#EFF6FF', color: '#2563EB', padding: '2px 8px', borderRadius: '6px', fontSize: '10.5px', fontWeight: 600 }}>{f.type}</span>
-                      </td>
-                      <td style={{ padding: '14px 16px', color: '#4B5563', lineHeight: 1.4 }}>
-                        {f.date.split('\n')[0]}<br/>
-                        <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{f.date.split('\n')[1] || '10:30 AM'}</span>
-                      </td>
-                      <td style={{ padding: '14px 16px', fontWeight: 600, color: '#4B5563' }}>{f.size}</td>
-                      <td style={{ padding: '14px 16px', color: '#6B7280' }}>{f.uploadedBy}</td>
-                      <td style={{ padding: '14px 16px', textAlign: 'center', position: 'relative' }}>
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '4px' }}>
-                          <button onClick={() => {
-                            if (f.fileUrl) {
-                              forceDownload(f.fileUrl, f.name);
-                            } else {
-                              toast.error('Article file not found');
-                            }
-                          }} style={{ background: '#EFF6FF', border: 'none', color: '#2563EB', padding: '5px', borderRadius: '6px', cursor: 'pointer', display: 'flex' }}>
-                            <FiDownload size={13} />
-                          </button>
-                          <button onClick={() => setOpenDropdownId(openDropdownId === f.id ? null : f.id)} style={{ background: openDropdownId === f.id ? '#F3F4F6' : 'none', border: 'none', color: '#9CA3AF', padding: '5px', borderRadius: '6px', cursor: 'pointer', display: 'flex' }}>
-                            <FiMoreVertical size={14} />
-                          </button>
-                        </div>
-                        
-                        {/* Dropdown Menu */}
-                        {openDropdownId === f.id && (
-                          <div style={{ position: 'absolute', right: '16px', top: '40px', background: '#fff', border: '1px solid #E5E7EB', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 10, width: '140px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                            <button onClick={() => {
-                               copyToClipboard(f.fileUrl);
-                               setOpenDropdownId(null);
-                            }} style={{ background: 'none', border: 'none', borderBottom: '1px solid #F3F4F6', padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: '#4B5563', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }} onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
-                              <FiCopy size={12} /> Copy Link
-                            </button>
-                            <button onClick={() => {
-                               toast.info(`Size: ${f.size} | Uploaded by: ${f.uploadedBy}`);
-                               setOpenDropdownId(null);
-                            }} style={{ background: 'none', border: 'none', padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: '#4B5563', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }} onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
-                              <FiInfo size={12} /> Properties
-                            </button>
-                          </div>
-                        )}
-                        
-                      </td>
+          {(() => {
+            const displayFiles = activeTab === 'All Files' ? allFiles : suppFiles;
+            return displayFiles.length > 0 ? (
+              <div style={{ ...cardStyle, overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E5E7EB' }}>
+                      <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: 600, color: '#4B5563' }}>#</th>
+                      <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: 600, color: '#4B5563' }}>File Name</th>
+                      <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: 600, color: '#4B5563' }}>File Type</th>
+                      <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: 600, color: '#4B5563' }}>Uploaded On</th>
+                      <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: 600, color: '#4B5563' }}>Size</th>
+                      <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: 600, color: '#4B5563' }}>Uploaded By</th>
+                      <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: 600, color: '#4B5563', textAlign: 'center' }}>Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div style={{ padding: '12px 16px', borderTop: '1px solid #E5E7EB', fontSize: '12px', color: '#6B7280' }}>
-                Showing 1 to {journalFiles.length} of {journalFiles.length} files
+                  </thead>
+                  <tbody style={{ fontSize: '12.5px', color: '#374151' }}>
+                    {displayFiles.map((f, idx) => (
+                      <tr key={f.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
+                        <td style={{ padding: '14px 16px', fontWeight: 600, color: '#6B7280' }}>{idx + 1}</td>
+                        <td style={{ padding: '14px 16px' }}>
+                          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                            <div style={{ background: f.iconColor, color: f.textColor, padding: '6px', borderRadius: '6px', fontWeight: 700, fontSize: '10px' }}>
+                              {f.type}
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <span style={{ fontWeight: 700, color: '#111827', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                {f.name}
+                                {f.tag && <span style={{ background: '#DCFCE7', color: '#15803D', fontSize: '9.5px', padding: '1px 6px', borderRadius: '4px' }}>{f.tag}</span>}
+                              </span>
+                              <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{f.purpose}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ padding: '14px 16px' }}>
+                          <span style={{ background: '#EFF6FF', color: '#2563EB', padding: '2px 8px', borderRadius: '6px', fontSize: '10.5px', fontWeight: 600 }}>{f.type}</span>
+                        </td>
+                        <td style={{ padding: '14px 16px', color: '#4B5563', lineHeight: 1.4 }}>
+                          {f.date.split('\n')[0]}<br/>
+                          <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{f.date.split('\n')[1] || '10:30 AM'}</span>
+                        </td>
+                        <td style={{ padding: '14px 16px', fontWeight: 600, color: '#4B5563' }}>{fileSizes[f.id] || f.size}</td>
+                        <td style={{ padding: '14px 16px', color: '#6B7280' }}>{f.uploadedBy}</td>
+                        <td style={{ padding: '14px 16px', textAlign: 'center', position: 'relative' }}>
+                          <div style={{ display: 'flex', justifyContent: 'center', gap: '4px' }}>
+                            <button onClick={() => {
+                              if (f.fileUrl) {
+                                forceDownload(f.fileUrl, f.name);
+                              } else {
+                                toast.error('Article file not found');
+                              }
+                            }} style={{ background: '#EFF6FF', border: 'none', color: '#2563EB', padding: '5px', borderRadius: '6px', cursor: 'pointer', display: 'flex' }}>
+                              <FiDownload size={13} />
+                            </button>
+                            <button onClick={() => setOpenDropdownId(openDropdownId === f.id ? null : f.id)} style={{ background: openDropdownId === f.id ? '#F3F4F6' : 'none', border: 'none', color: '#9CA3AF', padding: '5px', borderRadius: '6px', cursor: 'pointer', display: 'flex' }}>
+                              <FiMoreVertical size={14} />
+                            </button>
+                          </div>
+                          
+                          {/* Dropdown Menu */}
+                          {openDropdownId === f.id && (
+                            <div style={{ position: 'absolute', right: '16px', top: '40px', background: '#fff', border: '1px solid #E5E7EB', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 10, width: '140px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                              <button onClick={() => {
+                                 copyToClipboard(f.fileUrl);
+                                 setOpenDropdownId(null);
+                              }} style={{ background: 'none', border: 'none', borderBottom: '1px solid #F3F4F6', padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: '#4B5563', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }} onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                                <FiCopy size={12} /> Copy Link
+                              </button>
+                              <button onClick={() => {
+                                 toast.info(`Size: ${fileSizes[f.id] || f.size} | Uploaded by: ${f.uploadedBy}`);
+                                 setOpenDropdownId(null);
+                              }} style={{ background: 'none', border: 'none', padding: '10px 14px', textAlign: 'left', fontSize: '12px', color: '#4B5563', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }} onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                                <FiInfo size={12} /> Properties
+                              </button>
+                            </div>
+                          )}
+                          
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div style={{ padding: '12px 16px', borderTop: '1px solid #E5E7EB', fontSize: '12px', color: '#6B7280' }}>
+                  Showing 1 to {displayFiles.length} of {displayFiles.length} files
+                </div>
               </div>
-            </div>
-          ) : (
-            <div style={{ ...cardStyle, padding: '36px', textAlign: 'center', color: '#9CA3AF' }}>
-              <FiFileText size={32} style={{ marginBottom: '10px' }} />
-              <p style={{ margin: 0, fontSize: '13px' }}>No supplementary files uploaded.</p>
-            </div>
-          )}
+            ) : (
+              <div style={{ ...cardStyle, padding: '36px', textAlign: 'center', color: '#9CA3AF' }}>
+                <FiFileText size={32} style={{ marginBottom: '10px' }} />
+                <p style={{ margin: 0, fontSize: '13px' }}>No supplementary files found.</p>
+              </div>
+            );
+          })()}
 
         </div>
 

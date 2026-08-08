@@ -6,6 +6,7 @@ import {
   FiBarChart2, FiGlobe, FiFileText
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+import logo from '../assets/logo.png';
 
 const departments = [
   'Computer Science', 'Electronics & Communication', 'Mechanical Engineering',
@@ -166,19 +167,15 @@ const Register = () => {
 
         {/* Logo & Welcome */}
         <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '36px' }}>
-            <div style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: '12px', padding: '10px', display: 'flex' }}>
-              <FiBookOpen size={20} />
-            </div>
-            <div>
-              <p style={{ fontWeight: 700, fontSize: '16px', fontFamily: 'Poppins, sans-serif' }}>OJS Portal</p>
-              <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>Open Journal System</p>
+          <div style={{ marginBottom: '25px' }}>
+            <div style={{ background: '#fff', padding: '10px', borderRadius: '12px', display: 'inline-block' }}>
+              <img src={logo} alt="Praxis Logo" style={{ height: '40px', objectFit: 'contain' }} />
             </div>
           </div>
 
           <h1 style={{ fontSize: '30px', fontWeight: 800, fontFamily: 'Poppins, sans-serif', lineHeight: 1.25, marginBottom: '12px' }}>
             Welcome to<br />
-            <span style={{ color: '#fff' }}>OJS </span>
+            <span style={{ color: '#fff' }}>Praxis </span>
             <span style={{ color: '#60b4ff' }}>Portal</span>
           </h1>
           <div style={{ width: '44px', height: '4px', background: '#60b4ff', borderRadius: '4px', marginBottom: '16px' }} />
@@ -205,7 +202,7 @@ const Register = () => {
         {/* Book image placeholder */}
         <div style={{ position: 'relative', zIndex: 1 }}>
           <div style={{ borderRadius: '16px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', height: '100px', display: 'flex', alignItems: 'flex-end', padding: '12px 16px' }}>
-            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>© {new Date().getFullYear()} OJS Portal. All rights reserved.</span>
+            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>© {new Date().getFullYear()} Praxis. All rights reserved.</span>
           </div>
         </div>
       </div>
@@ -229,7 +226,7 @@ const Register = () => {
               </div>
               <div>
                 <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#111827', fontFamily: 'Poppins, sans-serif', margin: 0 }}>Create Your Account</h2>
-                <p style={{ fontSize: '13px', color: '#6B7280', margin: '3px 0 0' }}>Fill in your details to register with OJS Portal</p>
+                <p style={{ fontSize: '13px', color: '#6B7280', margin: '3px 0 0' }}>Fill in your details to register with Praxis</p>
               </div>
             </div>
 

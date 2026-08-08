@@ -297,35 +297,7 @@ const ChangePassword = () => {
             </div>
           </div>
 
-          {/* Security Recommendations */}
-          <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid #E9ECF0', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#111827', margin: '0 0 16px', fontFamily: 'Poppins, sans-serif' }}>Recommendations</h3>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <FiSmartphone size={18} color="#7C3AED" />
-                </div>
-                <div>
-                  <p style={{ fontSize: '13px', fontWeight: 600, color: '#111827', margin: '0 0 4px' }}>Two-Factor Auth</p>
-                  <p style={{ fontSize: '12px', color: '#6B7280', margin: '0 0 8px', lineHeight: 1.4 }}>Add an extra layer of security to your account.</p>
-                  <button style={{ background: '#fff', border: '1px solid #E5E7EB', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, color: '#374151', cursor: 'pointer' }}>Enable 2FA</button>
-                </div>
-              </div>
-              
-              <div style={{ height: '1px', background: '#F3F4F6' }} />
-              
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#FFFBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <FiAlertCircle size={18} color="#D97706" />
-                </div>
-                <div>
-                  <p style={{ fontSize: '13px', fontWeight: 600, color: '#111827', margin: '0 0 4px' }}>Password Age</p>
-                  <p style={{ fontSize: '12px', color: '#6B7280', margin: 0, lineHeight: 1.4 }}>It's recommended to change passwords every 90 days. Yours is 202 days old.</p>
-                </div>
-              </div>
-            </div>
-          </div>
+
           
         </div>
       </div>

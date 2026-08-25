@@ -325,7 +325,7 @@ const JournalFiles = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <FiInfo size={16} color="#2563EB" />
           <p style={{ fontSize: '12.5px', color: '#4B5563', margin: 0 }}>
-            <span style={{ fontWeight: 600, color: '#2563EB' }}>Need to replace a file?</span> You can upload the new file and the editorial team will be notified.
+            <span style={{ fontWeight: 600, color: '#2563EB' }}>Need to replace a file?</span> You can upload the new file and the Editorial Board will be notified.
           </p>
         </div>
         <button onClick={() => toast.info('Opening upload dialog...')} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fff', border: '1px solid #E5E7EB', color: '#4B5563', padding: '8px 16px', borderRadius: '8px', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}>

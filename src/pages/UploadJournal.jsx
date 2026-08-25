@@ -742,7 +742,7 @@ const UploadJournal = () => {
                     <h4 style={{ fontWeight: 700, fontSize: '13.5px', color: '#991B1B', margin: 0 }}>Important Note</h4>
                   </div>
                   <p style={{ fontSize: '12px', color: '#7F1D1D', lineHeight: 1.6, margin: 0 }}>
-                    Once submitted, you will not be able to edit the manuscript details. Our editorial team will review your submission.
+                    Once submitted, you will not be able to edit the manuscript details. Our Editorial Board will review your submission.
                   </p>
                 </div>
               </>
@@ -781,7 +781,7 @@ const UploadJournal = () => {
                 <h3 style={{ fontSize: '22px', fontWeight: 800, color: '#111827', margin: 0, fontFamily: 'Poppins, sans-serif' }}>Your Journal Has Been Submitted Successfully!</h3>
                 <p style={{ fontSize: '13.5px', color: '#4B5563', margin: 0, lineHeight: 1.6, maxWidth: '500px' }}>
                   Thank you for submitting your valuable research with us. <br/>
-                  Our editorial team will review your manuscript and get back to you soon.
+                  Our Editorial Board will review your manuscript and get back to you soon.
                 </p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '8px' }}>
                   <div style={{ background: '#D1FAE5', color: '#065F46', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #A7F3D0' }}>

@@ -222,7 +222,7 @@ const TrackStatus = () => {
                   <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#111827', margin: 0 }}>Under Review</h4>
                   <span style={{ fontSize: '11.5px', color: '#9CA3AF' }}>14 May 2024, 02:15 PM</span>
                 </div>
-                <p style={{ fontSize: '12.5px', color: '#6B7280', margin: 0, lineHeight: 1.5 }}>Your manuscript is now under review by the editorial team.</p>
+                <p style={{ fontSize: '12.5px', color: '#6B7280', margin: 0, lineHeight: 1.5 }}>Your manuscript is now under review by the Editorial Board.</p>
               </div>
             </div>
 
@@ -235,7 +235,7 @@ const TrackStatus = () => {
                   <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#111827', margin: 0 }}>Review Completed</h4>
                   <span style={{ fontSize: '11.5px', color: '#9CA3AF' }}>18 May 2024, 03:45 PM</span>
                 </div>
-                <p style={{ fontSize: '12.5px', color: '#6B7280', margin: 0, lineHeight: 1.5 }}>The review process is completed. The editorial team is making a decision.</p>
+                <p style={{ fontSize: '12.5px', color: '#6B7280', margin: 0, lineHeight: 1.5 }}>The review process is completed. The Editorial Board is making a decision.</p>
               </div>
             </div>
 

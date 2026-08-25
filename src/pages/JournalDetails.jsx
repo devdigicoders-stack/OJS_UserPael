@@ -125,25 +125,25 @@ const JournalDetails = () => {
     const msgs = [];
     
     msgs.push({
-      sender: 'Editorial Team',
+      sender: 'Editorial Board',
       initials: 'EA',
       avatarBg: '#3B82F6',
       date: currentJournal.date || '12 May',
       preview: 'Thank you for your submission.',
       title: 'Submission Received',
-      body: `Dear ${currentJournal.primaryAuthorName || currentJournal.primaryAuthor || 'Author'},\n\nThank you for submitting your manuscript "${currentJournal.title || 'Untitled'}" to ${currentJournal.category || currentJournal.journalName || 'our journal'}. We have received it and it will undergo initial screening shortly.\n\nBest regards,\nEditorial Team`,
+      body: `Dear ${currentJournal.primaryAuthorName || currentJournal.primaryAuthor || 'Author'},\n\nThank you for submitting your manuscript "${currentJournal.title || 'Untitled'}" to ${currentJournal.category || currentJournal.journalName || 'our journal'}. We have received it and it will undergo initial screening shortly.\n\nBest regards,\nEditorial Board`,
       time: '09:00 AM'
     });
 
     if (['Under Review', 'Reviewed', 'Approved', 'Rejected', 'Published'].includes(currentJournal.status)) {
       msgs.push({
-        sender: 'Editorial Team',
+        sender: 'Editorial Board',
         initials: 'EA',
         avatarBg: '#3B82F6',
         date: currentJournal.date || '14 May',
         preview: 'Your manuscript is under review.',
         title: 'Status Update: Under Review',
-        body: `Dear ${currentJournal.primaryAuthorName || currentJournal.primaryAuthor || 'Author'},\n\nYour manuscript "${currentJournal.title || 'Untitled'}" has passed the initial screening and is now under peer review. We will notify you once the reviews are completed.\n\nBest regards,\nEditorial Team`,
+        body: `Dear ${currentJournal.primaryAuthorName || currentJournal.primaryAuthor || 'Author'},\n\nYour manuscript "${currentJournal.title || 'Untitled'}" has passed the initial screening and is now under peer review. We will notify you once the reviews are completed.\n\nBest regards,\nEditorial Board`,
         time: '11:30 AM'
       });
     }
@@ -173,35 +173,35 @@ const JournalDetails = () => {
 
     if (currentJournal.status === 'Published') {
       msgs.push({
-        sender: 'Editorial Team',
+        sender: 'Editorial Board',
         initials: 'EA',
         avatarBg: '#3B82F6',
         date: currentJournal.date || '20 May',
         preview: 'Your article has been published successfully.',
         title: 'Congratulations: Article Published',
-        body: `Dear ${currentJournal.primaryAuthorName || currentJournal.primaryAuthor || 'Author'},\n\nWe are pleased to inform you that your article "${currentJournal.title || 'Untitled'}" has been published successfully in Volume ${currentJournal.volume || 15}, Issue ${currentJournal.issue || 2} of ${currentJournal.category || currentJournal.journalName || 'Praxis Journal'}.\n\nThank you for your valuable contribution.\n\nBest regards,\nEditorial Team`,
+        body: `Dear ${currentJournal.primaryAuthorName || currentJournal.primaryAuthor || 'Author'},\n\nWe are pleased to inform you that your article "${currentJournal.title || 'Untitled'}" has been published successfully in Volume ${currentJournal.volume || 15}, Issue ${currentJournal.issue || 2} of ${currentJournal.category || currentJournal.journalName || 'Praxis Journal of Society, Behaviour and Institutional Studies'}.\n\nThank you for your valuable contribution.\n\nBest regards,\nEditorial Board`,
         time: '11:20 AM'
       });
     } else if (currentJournal.status === 'Approved') {
       msgs.push({
-        sender: 'Editorial Team',
+        sender: 'Editorial Board',
         initials: 'EA',
         avatarBg: '#3B82F6',
         date: currentJournal.date || '20 May',
         preview: 'Your article has been accepted for publication.',
         title: 'Decision: Accepted',
-        body: `Dear ${currentJournal.primaryAuthorName || currentJournal.primaryAuthor || 'Author'},\n\nWe are pleased to inform you that your article "${currentJournal.title || 'Untitled'}" has been accepted for publication. It will be published shortly.\n\nBest regards,\nEditorial Team`,
+        body: `Dear ${currentJournal.primaryAuthorName || currentJournal.primaryAuthor || 'Author'},\n\nWe are pleased to inform you that your article "${currentJournal.title || 'Untitled'}" has been accepted for publication. It will be published shortly.\n\nBest regards,\nEditorial Board`,
         time: '10:00 AM'
       });
     } else if (currentJournal.status === 'Rejected') {
       msgs.push({
-        sender: 'Editorial Team',
+        sender: 'Editorial Board',
         initials: 'EA',
         avatarBg: '#3B82F6',
         date: currentJournal.date || '20 May',
         preview: 'Decision on your manuscript.',
         title: 'Decision: Rejected',
-        body: `Dear ${currentJournal.primaryAuthorName || currentJournal.primaryAuthor || 'Author'},\n\nWe regret to inform you that your article "${currentJournal.title || 'Untitled'}" has not been accepted for publication at this time. We encourage you to submit your future work to us.\n\nBest regards,\nEditorial Team`,
+        body: `Dear ${currentJournal.primaryAuthorName || currentJournal.primaryAuthor || 'Author'},\n\nWe regret to inform you that your article "${currentJournal.title || 'Untitled'}" has not been accepted for publication at this time. We encourage you to submit your future work to us.\n\nBest regards,\nEditorial Board`,
         time: '10:00 AM'
       });
     }
@@ -584,7 +584,7 @@ const JournalDetails = () => {
               <p style={detailValStyle}>{currentJournal.coAuthors?.length > 0 ? currentJournal.coAuthors.join(', ') : 'None'}</p>
 
               <p style={detailLabelStyle}>Journal/Conference</p>
-              <p style={detailValStyle}>{currentJournal.category || currentJournal.journalName || 'Praxis Journal'}</p>
+              <p style={detailValStyle}>{currentJournal.category || currentJournal.journalName || 'Praxis Journal of Society, Behaviour and Institutional Studies'}</p>
 
               <p style={detailLabelStyle}>DOI</p>
               <p style={{ ...detailValStyle, display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -671,7 +671,7 @@ const JournalDetails = () => {
                       <span style={{ fontSize: '11.5px', color: '#9CA3AF' }}>{currentJournal.status === 'Under Review' ? currentJournal.date : ''}</span>
                     </div>
                     <p style={{ fontSize: '12.5px', color: '#6B7280', margin: 0, lineHeight: 1.5 }}>The manuscript has been assigned to reviewers.</p>
-                    <span style={{ fontSize: '11.5px', color: '#9CA3AF', fontWeight: 500 }}>by Editorial Team</span>
+                    <span style={{ fontSize: '11.5px', color: '#9CA3AF', fontWeight: 500 }}>by Editorial Board</span>
                   </div>
                 </div>
               )}
@@ -722,7 +722,7 @@ const JournalDetails = () => {
                       <span style={{ fontSize: '11.5px', color: '#9CA3AF' }}>{currentJournal.date}</span>
                     </div>
                     <p style={{ fontSize: '12.5px', color: '#6B7280', margin: 0, lineHeight: 1.5 }}>Your article has been published successfully.</p>
-                    <span style={{ fontSize: '11.5px', color: '#9CA3AF', fontWeight: 500 }}>by Editorial Team</span>
+                    <span style={{ fontSize: '11.5px', color: '#9CA3AF', fontWeight: 500 }}>by Editorial Board</span>
                   </div>
                 </div>
               )}
@@ -863,7 +863,7 @@ const JournalDetails = () => {
                     EA
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#111827' }}>Editorial Team</span>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#111827' }}>Editorial Board</span>
                     <span style={{ fontSize: '10.5px', color: '#6B7280' }}>editorial@ijcs.org</span>
                   </div>
                   <span style={{ background: '#DCFCE7', color: '#15803D', padding: '2px 6px', borderRadius: '4px', fontSize: '9.5px', fontWeight: 700 }}>Editor</span>
@@ -926,7 +926,7 @@ const JournalDetails = () => {
                 <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#111827', margin: 0 }}>Editorial Decision</h4>
                 <span style={{ background: '#DCFCE7', color: '#15803D', padding: '2px 8px', borderRadius: '4px', fontSize: '10.5px', fontWeight: 700, marginTop: '2px', display: 'inline-block' }}>Accept</span>
               </div>
-              <span style={{ fontSize: '12.5px', color: '#6B7280', marginLeft: 'auto' }}>The editorial team has accepted your manuscript for publication.</span>
+              <span style={{ fontSize: '12.5px', color: '#6B7280', marginLeft: 'auto' }}>The Editorial Board has accepted your manuscript for publication.</span>
             </div>
 
             {/* Document Viewer Frame */}
@@ -968,7 +968,7 @@ const JournalDetails = () => {
                 <div style={{ fontSize: '13px', color: '#334155', lineHeight: 1.8, display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <p style={{ fontWeight: 'bold' }}>Dear {currentJournal.primaryAuthorName || currentJournal.primaryAuthor || 'Author'},</p>
                   <p>
-                    We are pleased to inform you that your manuscript entitled <span style={{ fontWeight: 'bold' }}>"{currentJournal.title || 'Untitled'}"</span> has been accepted for publication in <span style={{ fontStyle: 'italic' }}>{currentJournal.category || currentJournal.journalName || 'Praxis Journal'}</span>, Volume {currentJournal.volume || 15}, Issue {currentJournal.issue || 2}.
+                    We are pleased to inform you that your manuscript entitled <span style={{ fontWeight: 'bold' }}>"{currentJournal.title || 'Untitled'}"</span> has been accepted for publication in <span style={{ fontStyle: 'italic' }}>{currentJournal.category || currentJournal.journalName || 'Praxis Journal of Society, Behaviour and Institutional Studies'}</span>, Volume {currentJournal.volume || 15}, Issue {currentJournal.issue || 2}.
                   </p>
                   <p>
                     The reviews submitted for your manuscript indicate its originality, contribution to the research area, and clear presentation. We thank you for your valuable contribution to the journal and we look forward to your continued support in the future.
@@ -1002,7 +1002,7 @@ const JournalDetails = () => {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={detailLabelStyle}>Decision By</span>
-                  <span style={detailValStyle}>Editorial Team</span>
+                  <span style={detailValStyle}>Editorial Board</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <span style={{ ...detailLabelStyle, flexShrink: 0 }}>Comments</span>
@@ -1106,7 +1106,7 @@ const JournalDetails = () => {
 
                     <div style={{ display: 'flex', borderBottom: '1px solid #F3F4F6', paddingBottom: '10px', alignItems: 'flex-start' }}>
                       <span style={{ color: '#6B7280', width: '120px', fontWeight: 500, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px' }}><FiBookOpen size={13} /> Journal Name</span>
-                      <span style={{ color: '#111827', fontWeight: 600, flex: 1 }}>{currentJournal.category || currentJournal.journalName || 'Praxis Journal'}</span>
+                      <span style={{ color: '#111827', fontWeight: 600, flex: 1 }}>{currentJournal.category || currentJournal.journalName || 'Praxis Journal of Society, Behaviour and Institutional Studies'}</span>
                     </div>
 
                     <div style={{ display: 'flex', borderBottom: '1px solid #F3F4F6', paddingBottom: '10px', alignItems: 'flex-start' }}>
@@ -1277,7 +1277,7 @@ const JournalDetails = () => {
 
                   <div style={{ display: 'flex', borderBottom: '1px solid #F3F4F6', paddingBottom: '10px' }}>
                     <span style={{ color: '#6B7280', width: '120px', fontWeight: 500, flexShrink: 0 }}>Journal</span>
-                    <span style={{ color: '#111827', fontWeight: 600 }}>{currentJournal.category || currentJournal.journalName || 'Praxis Journal'}</span>
+                    <span style={{ color: '#111827', fontWeight: 600 }}>{currentJournal.category || currentJournal.journalName || 'Praxis Journal of Society, Behaviour and Institutional Studies'}</span>
                   </div>
 
                   <div style={{ display: 'flex', borderBottom: '1px solid #F3F4F6', paddingBottom: '10px' }}>
@@ -1462,8 +1462,8 @@ const JournalDetails = () => {
                             <span style={{ background: '#DCFCE7', color: '#15803D', padding: '2px 8px', borderRadius: '4px', fontSize: '10.5px', fontWeight: 700 }}>Accept</span>
                           </div>
                           <p style={{ fontSize: '11.5px', color: '#6B7280', margin: '4px 0 0' }}>
-                            The editorial team has accepted your manuscript for publication. <br/>
-                            Decided by: <span style={{ fontWeight: 600, color: '#4B5563' }}>Editorial Team</span>
+                            The Editorial Board has accepted your manuscript for publication. <br/>
+                            Decided by: <span style={{ fontWeight: 600, color: '#4B5563' }}>Editorial Board</span>
                           </p>
                         </div>
                       </div>
@@ -1487,7 +1487,7 @@ const JournalDetails = () => {
                             <span style={{ background: '#FEE2E2', color: '#B91C1C', padding: '2px 8px', borderRadius: '4px', fontSize: '10.5px', fontWeight: 700 }}>Reject</span>
                           </div>
                           <p style={{ fontSize: '11.5px', color: '#6B7280', margin: '4px 0 0' }}>
-                            The editorial team has rejected your manuscript.
+                            The Editorial Board has rejected your manuscript.
                           </p>
                         </div>
                       </div>

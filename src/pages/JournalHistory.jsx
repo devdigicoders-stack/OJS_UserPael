@@ -30,7 +30,7 @@ const JournalHistory = () => {
   const getStagesForStatus = (status) => {
     const defaultStages = [
       { stage: 'Submission', icon: FiUploadCloud, desc: 'Article submitted successfully' },
-      { stage: 'Editorial Screening', icon: FiSearch, desc: 'Initial screening by editorial team' },
+      { stage: 'Editorial Screening', icon: FiSearch, desc: 'Initial screening by Editorial Board' },
       { stage: 'Peer Review', icon: FiEye, desc: 'Under peer review process' },
       { stage: 'Review Completed', icon: FiCheckCircle, desc: 'Reviews submitted by reviewers' },
       { stage: 'Review & Decision', icon: FiAlertCircle, desc: 'Editorial decision in progress' },
@@ -159,7 +159,7 @@ const JournalHistory = () => {
           color: '#fff', border: '1px solid rgba(255,255,255,0.15)',
         }}>
           <p style={{ fontWeight: 800, fontSize: '16px', margin: 0, letterSpacing: '1px' }}>Praxis</p>
-          <p style={{ fontSize: '8px', color: 'rgba(255,255,255,0.7)', textAlign: 'center', margin: '4px 0', lineHeight: 1.4 }}>Journal of society, behaviour and institutions</p>
+          <p style={{ fontSize: '8px', color: 'rgba(255,255,255,0.7)', textAlign: 'center', margin: '4px 0', lineHeight: 1.4 }}>Praxis Journal of Society, Behaviour and Institutional Studies</p>
         </div>
 
         <div style={{ flex: 1, minWidth: '200px' }}>

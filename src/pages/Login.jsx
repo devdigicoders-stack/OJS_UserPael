@@ -114,7 +114,7 @@ const Login = () => {
       {/* ── Left Panel ── */}
       <div style={{
         width: '420px', flexShrink: 0,
-        background: 'linear-gradient(160deg, #0f2460 0%, #1a3a8f 45%, #0f766e 100%)',
+        backgroundColor: '#102868',
         color: '#fff', padding: '44px 40px',
         display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
         position: 'relative', overflow: 'hidden',
@@ -133,8 +133,7 @@ const Login = () => {
 
           <h1 style={{ fontSize: '32px', fontWeight: 800, fontFamily: 'Poppins, sans-serif', lineHeight: 1.25, marginBottom: '12px' }}>
             Welcome Back to<br />
-            <span style={{ color: '#fff' }}>Praxis </span>
-            <span style={{ color: '#60b4ff' }}>Portal</span>
+            <span style={{ color: '#fff', fontSize: '24px' }}>Praxis Journal of Society, Behaviour and Institutional Studies</span>
           </h1>
           <div style={{ width: '44px', height: '4px', background: '#60b4ff', borderRadius: '4px', marginBottom: '16px' }} />
           <p style={{ fontSize: '13.5px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.75 }}>
@@ -183,7 +182,7 @@ const Login = () => {
               </div>
               <div>
                 <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#111827', fontFamily: 'Poppins, sans-serif', margin: 0 }}>Sign In</h2>
-                <p style={{ fontSize: '13px', color: '#6B7280', margin: '3px 0 0' }}>Welcome back to Praxis</p>
+                <p style={{ fontSize: '13px', color: '#6B7280', margin: '3px 0 0' }}>Welcome back to Praxis Journal of Society, Behaviour and Institutional Studies</p>
               </div>
             </div>
 
@@ -289,7 +288,7 @@ const Login = () => {
                 {/* Divider */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
                   <div style={{ flex: 1, height: '1px', background: '#F3F4F6' }} />
-                  <span style={{ fontSize: '12px', color: '#9CA3AF', fontWeight: 500 }}>New to Praxis?</span>
+                  <span style={{ fontSize: '12px', color: '#9CA3AF', fontWeight: 500 }}>New to Praxis Journal?</span>
                   <div style={{ flex: 1, height: '1px', background: '#F3F4F6' }} />
                 </div>
 

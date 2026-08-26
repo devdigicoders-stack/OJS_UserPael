@@ -156,7 +156,7 @@ const Register = () => {
       {/* ── Left Panel ── */}
       <div style={{
         width: '360px', flexShrink: 0,
-        background: 'linear-gradient(160deg, #0f2460 0%, #1a3a8f 45%, #0f766e 100%)',
+        backgroundColor: '#102868',
         color: '#fff', padding: '40px 36px',
         display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
         position: 'relative', overflow: 'hidden',
@@ -167,16 +167,13 @@ const Register = () => {
 
         {/* Logo & Welcome */}
         <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ marginBottom: '25px' }}>
-            <div style={{ background: '#fff', padding: '10px', borderRadius: '12px', display: 'inline-block' }}>
-              <img src={logo} alt="Praxis Logo" style={{ height: '40px', objectFit: 'contain' }} />
-            </div>
+          <div style={{ marginBottom: '25px', textAlign: 'left' }}>
+            <img src={logo} alt="Praxis Logo" className="h-20 object-contain" />
           </div>
 
           <h1 style={{ fontSize: '30px', fontWeight: 800, fontFamily: 'Poppins, sans-serif', lineHeight: 1.25, marginBottom: '12px' }}>
             Welcome to<br />
-            <span style={{ color: '#fff' }}>Praxis </span>
-            <span style={{ color: '#60b4ff' }}>Portal</span>
+            <span style={{ color: '#fff', fontSize: '24px' }}>Praxis Journal of Society, Behaviour and Institutional Studies</span>
           </h1>
           <div style={{ width: '44px', height: '4px', background: '#60b4ff', borderRadius: '4px', marginBottom: '16px' }} />
           <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.7 }}>
@@ -202,7 +199,7 @@ const Register = () => {
         {/* Book image placeholder */}
         <div style={{ position: 'relative', zIndex: 1 }}>
           <div style={{ borderRadius: '16px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', height: '100px', display: 'flex', alignItems: 'flex-end', padding: '12px 16px' }}>
-            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>© {new Date().getFullYear()} Praxis. All rights reserved.</span>
+            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>© {new Date().getFullYear()} Praxis Journal of Society, Behaviour and Institutional Studies. All rights reserved.</span>
           </div>
         </div>
       </div>
@@ -226,7 +223,7 @@ const Register = () => {
               </div>
               <div>
                 <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#111827', fontFamily: 'Poppins, sans-serif', margin: 0 }}>Create Your Account</h2>
-                <p style={{ fontSize: '13px', color: '#6B7280', margin: '3px 0 0' }}>Fill in your details to register with Praxis</p>
+                <p style={{ fontSize: '13px', color: '#6B7280', margin: '3px 0 0' }}>Fill in your details to register with Praxis Journal of Society, Behaviour and Institutional Studies</p>
               </div>
             </div>
 

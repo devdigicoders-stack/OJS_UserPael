@@ -89,6 +89,14 @@ const Dashboard = () => {
   const { journals, activities } = useJournalContext();
   const [trendFilter, setTrendFilter] = useState('This Year');
   const [deptFilter, setDeptFilter] = useState('This Year');
+  const [bankDetails, setBankDetails] = useState(null);
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/settings/public`)
+      .then(res => res.json())
+      .then(data => setBankDetails(data))
+      .catch(() => {});
+  }, []);
 
   // Dynamic Data Calculations
   const stats = {
@@ -329,6 +337,45 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* ── Bank Details Card ── */}
+      {bankDetails && (bankDetails.bankName || bankDetails.accountNumber) && (
+        <div style={{ background: '#fff', borderRadius: '14px', border: '1px solid #F3F4F6', boxShadow: '0 1px 6px rgba(0,0,0,0.05)', padding: '20px 24px' }}>
+          <h3 style={{ fontWeight: 700, fontSize: '15px', color: '#111827', fontFamily: 'Poppins, sans-serif', margin: '0 0 16px' }}>Payment / Bank Details</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '14px' }}>
+            {bankDetails.bankName && (
+              <div>
+                <p style={{ fontSize: '11px', color: '#9CA3AF', marginBottom: '2px' }}>Bank Name</p>
+                <p style={{ fontSize: '13.5px', fontWeight: 600, color: '#111827' }}>{bankDetails.bankName}</p>
+              </div>
+            )}
+            {bankDetails.accountName && (
+              <div>
+                <p style={{ fontSize: '11px', color: '#9CA3AF', marginBottom: '2px' }}>Account Holder</p>
+                <p style={{ fontSize: '13.5px', fontWeight: 600, color: '#111827' }}>{bankDetails.accountName}</p>
+              </div>
+            )}
+            {bankDetails.accountNumber && (
+              <div>
+                <p style={{ fontSize: '11px', color: '#9CA3AF', marginBottom: '2px' }}>Account Number</p>
+                <p style={{ fontSize: '13.5px', fontWeight: 600, color: '#111827' }}>{bankDetails.accountNumber}</p>
+              </div>
+            )}
+            {bankDetails.ifscCode && (
+              <div>
+                <p style={{ fontSize: '11px', color: '#9CA3AF', marginBottom: '2px' }}>IFSC Code</p>
+                <p style={{ fontSize: '13.5px', fontWeight: 600, color: '#111827' }}>{bankDetails.ifscCode}</p>
+              </div>
+            )}
+            {bankDetails.upiId && (
+              <div>
+                <p style={{ fontSize: '11px', color: '#9CA3AF', marginBottom: '2px' }}>UPI ID</p>
+                <p style={{ fontSize: '13.5px', fontWeight: 600, color: '#111827' }}>{bankDetails.upiId}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

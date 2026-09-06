@@ -244,7 +244,7 @@ const ApprovedJournals = () => {
                   justifyContent: 'center', color: '#fff', overflow: 'hidden'
                 }}>
                   {j.image ? (
-                    <img src={`${import.meta.env.VITE_API_URL.replace('/api', '')}/${j.image.replace(/\\/g, '/')}`} alt="Cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={`${(import.meta.env.VITE_API_URL || 'https://api.praxis.org.in/api').replace(/\/api\/?$/, '')}/${j.image.replace(/\\/g, '/')}`} alt="Cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
                     <>
                       <p style={{ fontWeight: 800, fontSize: '14px', margin: 0, letterSpacing: '1px' }}>{j.abbr}</p>

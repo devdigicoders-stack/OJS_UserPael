@@ -57,7 +57,7 @@ const JournalFiles = () => {
       uploadedBy: authorName,
       iconColor: ext === 'PDF' ? '#FEE2E2' : '#DBEAFE',
       textColor: ext === 'PDF' ? '#DC2626' : '#2563EB',
-      fileUrl: `${import.meta.env.VITE_API_URL.replace('/api', '')}/${currentJournal.mainFilePath.replace(/\\/g, '/')}`
+      fileUrl: `${(import.meta.env.VITE_API_URL || 'https://api.praxis.org.in/api').replace(/\/api\/?$/, '')}/${currentJournal.mainFilePath.replace(/\\/g, '/')}`
     });
   }
 
@@ -77,7 +77,7 @@ const JournalFiles = () => {
         uploadedBy: authorName,
         iconColor: '#F3F4F6',
         textColor: '#4B5563',
-        fileUrl: `${import.meta.env.VITE_API_URL.replace('/api', '')}/${path.replace(/\\/g, '/')}`
+        fileUrl: `${(import.meta.env.VITE_API_URL || 'https://api.praxis.org.in/api').replace(/\/api\/?$/, '')}/${path.replace(/\\/g, '/')}`
       });
     });
   }
@@ -169,7 +169,7 @@ const JournalFiles = () => {
       {/* ── Upper Section (Journal Info Card) ── */}
       <div style={{ ...cardStyle, padding: '24px', display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
         <img
-          src={currentJournal.image ? `${import.meta.env.VITE_API_URL.replace('/api', '')}/${currentJournal.image.replace(/\\/g, '/')}` : "https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=160&auto=format&fit=crop&q=80"}
+          src={currentJournal.image ? `${(import.meta.env.VITE_API_URL || 'https://api.praxis.org.in/api').replace(/\/api\/?$/, '')}/${currentJournal.image.replace(/\\/g, '/')}` : "https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=160&auto=format&fit=crop&q=80"}
           alt="journal-pic"
           style={{ width: '90px', height: '110px', borderRadius: '10px', objectFit: 'cover', border: '1px solid #E5E7EB', flexShrink: 0 }}
         />

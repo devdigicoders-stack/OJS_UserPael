@@ -332,7 +332,7 @@ const ReviewerJournals = ({ title, statusFilter }) => {
                 <button 
                   onClick={() => {
                     if (selectedJournal.mainFilePath) {
-                      const fileUrl = `${import.meta.env.VITE_API_URL.replace('/api', '')}/${selectedJournal.mainFilePath.replace(/\\/g, '/')}`;
+                      const fileUrl = `${(import.meta.env.VITE_API_URL || 'https://api.praxis.org.in/api').replace(/\/api\/?$/, '')}/${selectedJournal.mainFilePath.replace(/\\/g, '/')}`;
                       window.open(fileUrl, '_blank');
                     } else {
                       toast.error('No file available to view');
@@ -345,7 +345,7 @@ const ReviewerJournals = ({ title, statusFilter }) => {
                 <button 
                   onClick={() => {
                     if (selectedJournal.mainFilePath) {
-                      const fileUrl = `${import.meta.env.VITE_API_URL.replace('/api', '')}/${selectedJournal.mainFilePath.replace(/\\/g, '/')}`;
+                      const fileUrl = `${(import.meta.env.VITE_API_URL || 'https://api.praxis.org.in/api').replace(/\/api\/?$/, '')}/${selectedJournal.mainFilePath.replace(/\\/g, '/')}`;
                       const fileName = selectedJournal.mainFilePath.split('/').pop().split('\\').pop() || 'Manuscript.pdf';
                       
                       const link = document.createElement('a');

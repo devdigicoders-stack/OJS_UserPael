@@ -96,7 +96,7 @@ const TrackStatus = () => {
       <div style={{ ...cardStyle, padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
           <img
-            src={currentJournal.image ? `${import.meta.env.VITE_API_URL.replace('/api', '')}/${currentJournal.image.replace(/\\/g, '/')}` : `https://picsum.photos/seed/${currentJournal.id}/160/140`}
+            src={currentJournal.image ? `${(import.meta.env.VITE_API_URL || 'https://api.praxis.org.in/api').replace(/\/api\/?$/, '')}/${currentJournal.image.replace(/\\/g, '/')}` : `https://picsum.photos/seed/${currentJournal.id}/160/140`}
             alt="journal-pic"
             style={{ width: '90px', height: '110px', borderRadius: '10px', objectFit: 'cover', border: '1px solid #E5E7EB', flexShrink: 0 }}
           />

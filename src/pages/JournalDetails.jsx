@@ -42,7 +42,7 @@ const JournalDetails = () => {
   const handleDownload = (type) => {
     if (type === 'pdf') {
       if (currentJournal.mainFilePath) {
-        const fileUrl = `${import.meta.env.VITE_API_URL.replace('/api', '')}/${currentJournal.mainFilePath.replace(/\\/g, '/')}`;
+        const fileUrl = `${(import.meta.env.VITE_API_URL || 'https://api.praxis.org.in/api').replace(/\/api\/?$/, '')}/${currentJournal.mainFilePath.replace(/\\/g, '/')}`;
         const fileName = currentJournal.mainFilePath.split('/').pop().split('\\').pop() || 'Article_Manuscript.pdf';
         forceDownload(fileUrl, fileName);
       } else {
@@ -72,7 +72,7 @@ const JournalDetails = () => {
 
   const handlePrintArticle = () => {
     if (currentJournal.mainFilePath) {
-      const fileUrl = `${import.meta.env.VITE_API_URL.replace('/api', '')}/${currentJournal.mainFilePath.replace(/\\/g, '/')}`;
+      const fileUrl = `${(import.meta.env.VITE_API_URL || 'https://api.praxis.org.in/api').replace(/\/api\/?$/, '')}/${currentJournal.mainFilePath.replace(/\\/g, '/')}`;
       window.open(fileUrl, '_blank');
       return;
     } else {
@@ -560,7 +560,7 @@ const JournalDetails = () => {
               </button>
               <button onClick={() => {
                 if (currentJournal.mainFilePath) {
-                  window.open(`${import.meta.env.VITE_API_URL.replace('/api', '')}/${currentJournal.mainFilePath.replace(/\\/g, '/')}`, '_blank');
+                  window.open(`${(import.meta.env.VITE_API_URL || 'https://api.praxis.org.in/api').replace(/\/api\/?$/, '')}/${currentJournal.mainFilePath.replace(/\\/g, '/')}`, '_blank');
                 } else {
                   toast.error('Article file not found');
                 }
@@ -624,7 +624,7 @@ const JournalDetails = () => {
               {currentJournal.additionalFilePaths.map((path, idx) => {
                 const fileName = path.split('\\').pop().split('/').pop();
                 return (
-                  <button key={idx} onClick={() => window.open(`${import.meta.env.VITE_API_URL.replace('/api', '')}/${path.replace(/\\/g, '/')}`, '_blank')} style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
+                  <button key={idx} onClick={() => window.open(`${(import.meta.env.VITE_API_URL || 'https://api.praxis.org.in/api').replace(/\/api\/?$/, '')}/${path.replace(/\\/g, '/')}`, '_blank')} style={actionBtnStyle} onMouseEnter={e => e.currentTarget.style.borderColor = '#2563EB'} onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
                     <FiPaperclip size={14} color="#2563EB" /> {fileName.length > 20 ? fileName.substring(0, 20) + '...' : fileName}
                   </button>
                 );
@@ -1827,7 +1827,7 @@ const JournalDetails = () => {
             <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '32px' }}>
               <button onClick={() => {
                 if (currentJournal.mainFilePath) {
-                  window.open(`${import.meta.env.VITE_API_URL.replace('/api', '')}/${currentJournal.mainFilePath.replace(/\\/g, '/')}`, '_blank');
+                  window.open(`${(import.meta.env.VITE_API_URL || 'https://api.praxis.org.in/api').replace(/\/api\/?$/, '')}/${currentJournal.mainFilePath.replace(/\\/g, '/')}`, '_blank');
                 } else {
                   toast.error('File not found');
                 }

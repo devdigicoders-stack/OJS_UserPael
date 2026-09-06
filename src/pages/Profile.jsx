@@ -247,7 +247,7 @@ const Profile = () => {
                 overflow: 'hidden'
               }}>
                 {formData.profilePic ? (
-                  <img src={`${import.meta.env.VITE_API_URL.replace('/api', '')}${formData.profilePic}`} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={`${(import.meta.env.VITE_API_URL || 'https://api.praxis.org.in/api').replace(/\/api\/?$/, '')}${formData.profilePic}`} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   formData.initials
                 )}

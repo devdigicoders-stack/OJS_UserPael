@@ -26,6 +26,17 @@ const JournalDetails = () => {
   const [activeMessage, setActiveMessage] = useState(1);
   const [showArticleModal, setShowArticleModal] = useState(false);
 
+  const [imgError, setImgError] = useState(false);
+
+  const getCoverImageUrl = (img) => {
+    if (!img) return null;
+    if (img.startsWith('http://') || img.startsWith('https://')) return img;
+    const baseUrl = (import.meta.env.VITE_API_URL || 'https://api.praxis.org.in/api').replace(/\/api\/?$/, '');
+    return `${baseUrl}/${img.replace(/\\/g, '/').replace(/^\/+/, '')}`;
+  };
+
+  const coverSrc = getCoverImageUrl(currentJournal.coverImage || currentJournal.image);
+
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
     toast.success(`Copied: ${text}`);
@@ -298,11 +309,47 @@ const JournalDetails = () => {
         {/* Info Card */}
         <div style={{ ...cardStyle, padding: '24px', display: 'flex', gap: '20px', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', gap: '20px' }}>
-            <img
-              src={currentJournal.coverImage || currentJournal.image || `https://picsum.photos/seed/${currentJournal.id}/160/140`}
-              alt="journal-pic"
-              style={{ width: activeTab === 'Publication' ? '90px' : '120px', height: activeTab === 'Publication' ? '110px' : '140px', borderRadius: '10px', objectFit: 'cover', border: '1px solid #E5E7EB', flexShrink: 0 }}
-            />
+            {coverSrc && !imgError ? (
+              <img
+                src={coverSrc}
+                alt="journal-cover"
+                onError={() => setImgError(true)}
+                style={{
+                  width: activeTab === 'Publication' ? '90px' : '120px',
+                  height: activeTab === 'Publication' ? '110px' : '140px',
+                  borderRadius: '10px',
+                  objectFit: 'cover',
+                  border: '1px solid #E5E7EB',
+                  flexShrink: 0
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: activeTab === 'Publication' ? '90px' : '120px',
+                  height: activeTab === 'Publication' ? '110px' : '140px',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#ffffff',
+                  padding: '10px',
+                  textAlign: 'center',
+                  flexShrink: 0,
+                  boxShadow: '0 4px 10px rgba(37,99,235,0.15)'
+                }}
+              >
+                <FiBook size={activeTab === 'Publication' ? 24 : 32} style={{ marginBottom: '6px', opacity: 0.9 }} />
+                <span style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                  {currentJournal.dept ? currentJournal.dept.substring(0, 8) : 'PRAXIS'}
+                </span>
+                <span style={{ fontSize: '9px', opacity: 0.8, marginTop: '2px' }}>
+                  {currentJournal.id}
+                </span>
+              </div>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
               <span style={badgeStyle}><div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#137333' }} /> {currentJournal.status}</span>
               <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#111827', fontFamily: 'Poppins, sans-serif', margin: '4px 0 2px', lineHeight: 1.4 }}>

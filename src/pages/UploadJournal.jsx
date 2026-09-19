@@ -108,13 +108,23 @@ const UploadJournal = () => {
 
   const removeAdditional = (index) => setAdditionalFiles(prev => prev.filter((_, i) => i !== index));
 
+  const commitKeyword = (text) => {
+    if (!text || !text.trim()) return;
+    const parts = text.split(',').map(k => k.trim()).filter(Boolean);
+    setKeywords(prev => {
+      const updated = [...prev];
+      parts.forEach(p => {
+        if (!updated.includes(p)) updated.push(p);
+      });
+      return updated;
+    });
+    setNewKeyword('');
+  };
+
   const addKeyword = (e) => {
-    if (e.key === 'Enter' && newKeyword.trim()) {
+    if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
-      if (!keywords.includes(newKeyword.trim())) {
-        setKeywords([...keywords, newKeyword.trim()]);
-      }
-      setNewKeyword('');
+      commitKeyword(newKeyword);
     }
   };
   const removeKeyword = (kw) => setKeywords(keywords.filter(k => k !== kw));
@@ -126,11 +136,21 @@ const UploadJournal = () => {
   };
 
   const handleNextStep2 = () => {
+    let currentKeywords = [...keywords];
+    if (newKeyword && newKeyword.trim()) {
+      const parts = newKeyword.split(',').map(k => k.trim()).filter(Boolean);
+      parts.forEach(p => {
+        if (!currentKeywords.includes(p)) currentKeywords.push(p);
+      });
+      setKeywords(currentKeywords);
+      setNewKeyword('');
+    }
+
     if (!formData.title.trim()) { toast.error('Journal Title is required'); return; }
     if (!formData.researchArea) { toast.error('Research Area is required'); return; }
     if (!formData.department) { toast.error('Department is required'); return; }
     if (!formData.abstract.trim()) { toast.error('Abstract is required'); return; }
-    if (keywords.length === 0) { toast.error('Please add at least one keyword'); return; }
+    if (currentKeywords.length === 0) { toast.error('Please add at least one keyword'); return; }
     if (!formData.pages) { toast.error('Number of pages is required'); return; }
     if (!formData.phone.trim()) { toast.error('Corresponding Author phone is required'); return; }
 

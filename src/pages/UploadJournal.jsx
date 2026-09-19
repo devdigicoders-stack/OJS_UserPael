@@ -99,11 +99,15 @@ const UploadJournal = () => {
   };
 
   const handleAddFile = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const sizeMB = (file.size / 1024 / 1024).toFixed(2);
-    setAdditionalFiles(prev => [...prev, { file, name: file.name, size: `${sizeMB} MB` }]);
-    toast.success(`"${file.name}" added!`);
+    const files = Array.from(e.target.files || []);
+    if (!files || files.length === 0) return;
+    const newFiles = files.map(file => {
+      const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+      return { file, name: file.name, size: `${sizeMB} MB` };
+    });
+    setAdditionalFiles(prev => [...prev, ...newFiles]);
+    toast.success(`${files.length} file(s) added!`);
+    e.target.value = '';
   };
 
   const removeAdditional = (index) => setAdditionalFiles(prev => prev.filter((_, i) => i !== index));
@@ -426,7 +430,7 @@ const UploadJournal = () => {
                     <button type="button" onClick={() => addFileInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: '1.5px solid #2563EB', color: '#2563EB', borderRadius: '8px', padding: '6px 14px', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}>
                       <FiPlus size={14} /> Add More
                     </button>
-                    <input ref={addFileInputRef} type="file" style={{ display: 'none' }} onChange={handleAddFile} />
+                    <input ref={addFileInputRef} type="file" multiple style={{ display: 'none' }} onChange={handleAddFile} />
                   </div>
                   {additionalFiles.length > 0 ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

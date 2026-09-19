@@ -455,17 +455,40 @@ const UploadJournal = () => {
                       <label style={labelStyle}>Research Area / Subject <span style={{ color: '#EF4444' }}>*</span></label>
                       <select name="researchArea" value={formData.researchArea} onChange={handleInputChange} style={{ ...inputStyle, appearance: 'none', background: '#fff url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236B7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E") no-repeat right 12px center/14px', paddingRight: '36px' }}>
                         <option value="">Select research area</option>
+                        <option value="Sociology">Sociology</option>
+                        <option value="Political Science">Political Science</option>
+                        <option value="Psychology">Psychology</option>
+                        <option value="Economics">Economics</option>
+                        <option value="Governance and Public Administration">Governance and Public Administration</option>
+                        <option value="Criminology">Criminology</option>
+                        <option value="Anthropology">Anthropology</option>
+                        <option value="Education">Education</option>
+                        <option value="Management">Management</option>
+                        <option value="Commerce">Commerce</option>
+                        <option value="Geography">Geography</option>
+                        <option value="Law">Law</option>
+                        <option value="Social Work">Social Work</option>
+                        <option value="Gender Studies">Gender Studies</option>
                         <option value="Computer Science">Computer Science</option>
                         <option value="Artificial Intelligence">Artificial Intelligence</option>
                         <option value="Data Science">Data Science</option>
+                        <option value="Other">Other</option>
                       </select>
                     </div>
                     <div>
                       <label style={labelStyle}>Department <span style={{ color: '#EF4444' }}>*</span></label>
                       <select name="department" value={formData.department} onChange={handleInputChange} style={{ ...inputStyle, appearance: 'none', background: '#fff url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236B7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E") no-repeat right 12px center/14px', paddingRight: '36px' }}>
                         <option value="">Select department</option>
+                        <option value="Social Science">Social Science</option>
+                        <option value="Humanities">Humanities</option>
+                        <option value="Arts">Arts</option>
+                        <option value="Commerce">Commerce</option>
+                        <option value="Management">Management</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Administration">Administration</option>
                         <option value="Engineering">Engineering</option>
                         <option value="Science">Science</option>
+                        <option value="Other">Other</option>
                       </select>
                     </div>
                     <div>

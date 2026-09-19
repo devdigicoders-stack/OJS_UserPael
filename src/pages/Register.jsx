@@ -9,9 +9,8 @@ import { toast } from 'react-toastify';
 import logo from '../assets/logo.png';
 
 const departments = [
-  'Computer Science', 'Electronics & Communication', 'Mechanical Engineering',
-  'Civil Engineering', 'Biotechnology', 'Chemistry', 'Physics',
-  'Mathematics', 'Management', 'Humanities & Social Sciences', 'Other',
+  'Social Science', 'Humanities', 'Arts', 'Commerce', 'Management',
+  'Finance', 'Administration', 'Computer Science', 'Engineering', 'Science', 'Other',
 ];
 
 const designations = [
